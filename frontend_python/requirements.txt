@@ -1,0 +1,6 @@
+flask
+anthropic
+httpx
+pydantic
+python-dotenv
+mcp

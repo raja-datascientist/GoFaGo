@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Fa Go - AI Fashion Assistant</title>
+    <meta name="description" content="Discover your perfect fashion style with our AI-powered fashion assistant">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css?v=22">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Content - Dynamic Layout -->
+        <main class="main-content initial">
+            <!-- Chat Section -->
+            <section class="chat-section">
+                <header class="section-title">
+                    <span>💬</span>
+                    <span>Go Fa Go</span>
+                </header>
+                <div id="messages" class="messages" role="log" aria-live="polite">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+                
+                <!-- Chat Input -->
+                <div class="chat-input-container">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        placeholder="Ask me about fashion products..." 
+                        class="chat-input"
+                        aria-label="Type your fashion question"
+                        autocomplete="off"
+                    >
+                    <button id="sendButton" class="send-button" aria-label="Send message">
+                        Send
+                    </button>
+                </div>
+            </section>
+
+            <!-- Search Results Section -->
+            <section id="searchResultsSection" class="search-results-section">
+                <header class="section-title">
+                    <span>🛍️</span>
+                    <span>Search Results</span>
+                </header>
+                <div id="productsGrid" class="product-grid" role="grid" aria-label="Product search results">
+                    <div class="empty-state">
+                        <p>Search for products to see results here</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Product Details + Recommendations Section -->
+            <aside class="right-section">
+                <!-- Fixed Header -->
+                <header class="product-details-header">
+                    <h2 class="section-title">
+                        <span>📋</span>
+                        <span>Product Details</span>
+                    </h2>
+                    <button id="closeDetailsBtn" class="close-btn" aria-label="Close product details">
+                        ×
+                    </button>
+                </header>
+                
+                <!-- Scrollable Content -->
+                <div class="right-content">
+                    <!-- Product Details Section -->
+                    <section id="productDetailsSection" class="product-details-section">
+                        <div id="productDetails" class="product-details">
+                            <div class="empty-state">
+                                <p>Click on a product to see details here</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Recommendations Header - Inside scrollable content -->
+                    <div id="recommendationsHeader" class="recommendations-header" style="display: none;">
+                        <header class="section-title">
+                            <span>💡</span>
+                            <span>Recommended Items</span>
+                        </header>
+                    </div>
+
+                    <!-- Recommendations Section -->
+                    <section id="recommendationsSection" class="recommendations-section" style="display: none;">
+                        <div id="recommendationsGrid" class="recommendations-grid" role="grid" aria-label="Recommended products">
+                            <div class="empty-state">
+                                <p>Product recommendations will appear here</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script src="static/script.js?v=22"></script>
+</body>
+</html>
