@@ -78,23 +78,29 @@
             <!-- Search Results Section -->
             <section id="searchResultsSection" class="search-results-section">
                 <div id="productsGrid" class="product-grid" role="grid" aria-label="Product search results">
-                    <div class="fashion-animation-container">
-                        <div class="fashion-icon">👗</div>
-                        <div class="fashion-icon">👠</div>
-                        <div class="fashion-icon">👜</div>
-                        <div class="fashion-icon">💄</div>
-                        <div class="fashion-icon">👒</div>
-                        <div class="fashion-icon">🕶️</div>
-                        <div class="fashion-icon">💍</div>
-                        <div class="fashion-icon">⌚</div>
-                        <div class="fashion-icon">👕</div>
-                        <div class="fashion-icon">👖</div>
-                        <div class="fashion-icon">🧥</div>
-                        <div class="fashion-icon">👔</div>
-                    </div>
-                    <div class="fashion-text">
-                        <h2>Discover Your Style</h2>
-                        <p>Ask me about fashion products to get started!</p>
+                    <div class="fashion-loading-container">
+                        <!-- Animated Spinner -->
+                        <div class="hanger-wrapper">
+                            <div class="spinner-ring"></div>
+                            <!-- Fashion Items Floating Around -->
+                            <div class="fashion-items">
+                                <div class="fashion-item">👗</div>
+                                <div class="fashion-item">👠</div>
+                                <div class="fashion-item">💄</div>
+                            </div>
+                        </div>
+
+                        <!-- Loading Text -->
+                        <div class="loading-text">
+                            Searching Fashion
+                            <span class="dots">
+                                <span>.</span><span>.</span><span>.</span>
+                            </span>
+                        </div>
+
+                        <div class="loading-subtext">
+                            Finding the perfect styles for you
+                        </div>
                     </div>
                 </div>
             </section>
