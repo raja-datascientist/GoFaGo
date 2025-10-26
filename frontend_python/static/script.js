@@ -105,6 +105,33 @@ class StyleAI {
 
         // Modal interactions
         this.setupModalInteractions();
+        
+        // Event delegation for dynamically created buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('view-btn-action')) {
+                const productId = e.target.getAttribute('data-product-id');
+                if (productId) {
+                    e.preventDefault();
+                    this.openQuickView(productId);
+                }
+            }
+            
+            if (e.target.classList.contains('add-btn-action')) {
+                const productId = e.target.getAttribute('data-product-id');
+                if (productId) {
+                    e.preventDefault();
+                    this.addToCart(productId);
+                }
+            }
+            
+            if (e.target.classList.contains('quick-view-btn')) {
+                const productId = e.target.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+                if (productId) {
+                    e.preventDefault();
+                    this.openQuickView(productId);
+                }
+            }
+        });
     }
 
     setupModalInteractions() {
@@ -297,8 +324,8 @@ class StyleAI {
                 <div class="product-name">${productName}</div>
                 <div class="product-price">$${productPrice}</div>
                 <div class="product-actions">
-                    <button class="action-btn view-btn-action" onclick="styleAI.openQuickView('${productId}')">👁️ View</button>
-                    <button class="action-btn add-btn-action" onclick="styleAI.addToCart('${productId}')">🛍️ Add</button>
+                    <button class="action-btn view-btn-action" data-product-id="${productId}">👁️ View</button>
+                    <button class="action-btn add-btn-action" data-product-id="${productId}">🛍️ Add</button>
                 </div>
             </div>
         `;

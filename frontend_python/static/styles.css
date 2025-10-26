@@ -215,7 +215,13 @@ body {
     display: flex;
     flex-direction: column;
     padding: 24px;
+    overflow: hidden;
+}
+
+.chat-scrollable-area {
+    flex: 1;
     overflow-y: auto;
+    padding-right: 8px;
 }
 
 .empty-state {
@@ -539,7 +545,8 @@ body {
 .message-input-container {
     display: flex;
     gap: 12px;
-    margin-top: auto;
+    padding-top: 20px;
+    flex-shrink: 0;
 }
 
 .message-input {
