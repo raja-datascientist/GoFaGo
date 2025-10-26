@@ -251,6 +251,9 @@ class StyleAI {
         const chatMessages = document.getElementById('chatMessages');
         const productGridContainer = document.getElementById('productGridContainer');
         
+        // Store products for modal and recommendations
+        this.productsData = products;
+        
         // Create product grid
         productGridContainer.innerHTML = '<div class="product-grid" id="productGrid"></div>';
         const productGrid = document.getElementById('productGrid');
@@ -268,32 +271,32 @@ class StyleAI {
 
     createProductCard(product) {
         const card = document.createElement('div');
-    card.className = 'product-card';
+        card.className = 'product-card';
         card.dataset.productId = product.id;
         
-        const colorClass = product.imageColor;
-    
-    card.innerHTML = `
+        const colorClass = product.imageColor || 'blue';
+        
+        card.innerHTML = `
             <div class="product-image ${colorClass}">
                 <button class="favorite-btn" onclick="styleAI.toggleFavorite('${product.id}')">♡</button>
                 <div class="match-badge">
-                    <span class="match-percentage">${product.matchPercentage}</span>
+                    <span class="match-percentage">${product.matchPercentage || 90}</span>
                     <span class="match-text">match</span>
                 </div>
-        </div>
-        <div class="product-info">
-                <div class="product-brand">${product.brand}</div>
-                <div class="product-name">${product.name}</div>
-                <div class="product-price">$${product.price}</div>
+            </div>
+            <div class="product-info">
+                <div class="product-brand">${product.brand || 'Brand'}</div>
+                <div class="product-name">${product.name || product.title || 'Product Name'}</div>
+                <div class="product-price">$${product.price || '0.00'}</div>
                 <div class="product-actions">
                     <button class="action-btn view-btn-action" onclick="styleAI.openQuickView('${product.id}')">👁️ View</button>
                     <button class="action-btn add-btn-action" onclick="styleAI.addToCart('${product.id}')">🛍️ Add</button>
                 </div>
-        </div>
-    `;
-    
-    return card;
-}
+            </div>
+        `;
+        
+        return card;
+    }
 
     loadMoreProducts() {
         const productGrid = document.getElementById('productGrid');
@@ -320,39 +323,120 @@ class StyleAI {
     }
 
     openQuickView(productId) {
-        const products = this.getProductData();
-        const product = products.find(p => p.id === productId);
+        console.log('Opening quick view for product:', productId);
         
-        if (!product) return;
+        // Try to find product in displayed products first
+        let product = null;
+        if (this.productsData) {
+            product = this.productsData.find(p => p.id === productId);
+        }
+        
+        // Fallback to mock data if not found
+        if (!product) {
+            const products = this.getProductData();
+            product = products.find(p => p.id === productId);
+        }
+        
+        if (!product) {
+            console.error('Product not found:', productId);
+            return;
+        }
         
         this.currentProduct = product;
         
-        // Update modal content
-        document.querySelector('.product-brand').textContent = product.brand.toUpperCase();
-        document.querySelector('.product-name').textContent = product.name;
-        document.querySelector('.product-price').textContent = `$${product.price}`;
-        document.querySelector('.vendor-url').textContent = `🔗 ${product.vendor}`;
-        document.querySelector('.vendor-url').href = product.vendorUrl;
+        // Fetch recommendations for this product
+        this.loadRecommendations(productId);
         
-        // Update rating
-        document.querySelector('.stars').textContent = '★'.repeat(Math.floor(product.rating)) + '☆'.repeat(5 - Math.floor(product.rating));
-        document.querySelector('.rating-text').textContent = `${product.rating} (${product.reviews} reviews)`;
+        // Update modal content
+        document.querySelector('.product-brand').textContent = (product.brand || 'Brand').toUpperCase();
+        document.querySelector('.product-name').textContent = product.name || product.title || 'Product Name';
+        document.querySelector('.product-price').textContent = `$${product.price || '0.00'}`;
+        
+        const vendorUrl = document.querySelector('.vendor-url');
+        if (vendorUrl) {
+            vendorUrl.textContent = `🔗 ${product.vendor || 'vendor.com'}`;
+            vendorUrl.href = product.vendorUrl || '#';
+        }
+        
+        // Update rating if exists
+        const rating = product.rating || 4.5;
+        const reviews = product.reviews || '1.2k';
+        if (document.querySelector('.stars')) {
+            document.querySelector('.stars').textContent = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
+            document.querySelector('.rating-text').textContent = `${rating} (${reviews} reviews)`;
+        }
         
         // Update features
         const featuresList = document.querySelector('.features ul');
-        featuresList.innerHTML = '';
-        product.features.forEach(feature => {
-            const li = document.createElement('li');
-            li.textContent = feature;
-            featuresList.appendChild(li);
-        });
+        if (featuresList && product.features) {
+            featuresList.innerHTML = '';
+            product.features.forEach(feature => {
+                const li = document.createElement('li');
+                li.textContent = feature;
+                featuresList.appendChild(li);
+            });
+        }
         
         // Update match badge
-        document.querySelector('.modal-left .match-percentage').textContent = product.matchPercentage;
+        const matchPercentage = product.matchPercentage || 90;
+        if (document.querySelector('.modal-left .match-percentage')) {
+            document.querySelector('.modal-left .match-percentage').textContent = matchPercentage;
+        }
         
         // Show modal
         document.getElementById('quickViewModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+    }
+
+    async loadRecommendations(productId) {
+        // Load recommendations from backend
+        try {
+            const response = await fetch('/api/recommendations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ productId: productId })
+            });
+            
+            const data = await response.json();
+            
+            if (data.products && data.products.length > 0) {
+                this.displayRecommendations(data.products);
+            }
+        } catch (error) {
+            console.error('Error loading recommendations:', error);
+        }
+    }
+
+    displayRecommendations(products) {
+        const lookItemsContainer = document.querySelector('.look-items');
+        if (!lookItemsContainer) return;
+        
+        lookItemsContainer.innerHTML = '';
+        
+        products.slice(0, 2).forEach(product => {
+            const lookItem = document.createElement('div');
+            lookItem.className = 'look-item';
+            
+            const color = this.getRandomColor();
+            
+            lookItem.innerHTML = `
+                <div class="look-image" style="background-color: ${color};"></div>
+                <div class="look-info">
+                    <div class="look-name">${product.name || product.title}</div>
+                    <div class="look-price">$${product.price}</div>
+                    <button class="quick-view-btn" onclick="styleAI.openQuickView('${product.id}')">Quick View</button>
+                </div>
+            `;
+            
+            lookItemsContainer.appendChild(lookItem);
+        });
+    }
+
+    getRandomColor() {
+        const colors = ['#d9e8ff', '#fce4ec', '#e8f5e8', '#fef3c7', '#e9d5ff', '#f0f0f0', '#e0e0e0'];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     closeModal() {
