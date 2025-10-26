@@ -40,22 +40,32 @@ class StyleAI {
             this.startNewSearch();
         });
 
-        // Load more button
-        document.getElementById('loadMoreBtn').addEventListener('click', () => {
-            this.loadMoreProducts();
-        });
+        // Load more button (if exists)
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                this.loadMoreProducts();
+            });
+}
 
-        // Send message
-        document.getElementById('sendBtn').addEventListener('click', () => {
-            this.sendMessage();
-        });
-
-        // Message input enter key
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+// Send message
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+        
+        if (sendBtn) {
+            sendBtn.addEventListener('click', () => {
                 this.sendMessage();
-            }
-        });
+            });
+        }
+        
+        if (messageInput) {
+            // Message input enter key
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendMessage();
+                }
+            });
+        }
 
         // Quick refinements
         document.querySelectorAll('.refinement-btn').forEach(btn => {
@@ -258,20 +268,20 @@ class StyleAI {
 
     createProductCard(product) {
         const card = document.createElement('div');
-        card.className = 'product-card';
+    card.className = 'product-card';
         card.dataset.productId = product.id;
         
         const colorClass = product.imageColor;
-        
-        card.innerHTML = `
+    
+    card.innerHTML = `
             <div class="product-image ${colorClass}">
                 <button class="favorite-btn" onclick="styleAI.toggleFavorite('${product.id}')">♡</button>
                 <div class="match-badge">
                     <span class="match-percentage">${product.matchPercentage}</span>
                     <span class="match-text">match</span>
                 </div>
-            </div>
-            <div class="product-info">
+        </div>
+        <div class="product-info">
                 <div class="product-brand">${product.brand}</div>
                 <div class="product-name">${product.name}</div>
                 <div class="product-price">$${product.price}</div>
@@ -279,10 +289,10 @@ class StyleAI {
                     <button class="action-btn view-btn-action" onclick="styleAI.openQuickView('${product.id}')">👁️ View</button>
                     <button class="action-btn add-btn-action" onclick="styleAI.addToCart('${product.id}')">🛍️ Add</button>
                 </div>
-            </div>
-        `;
-        
-        return card;
+        </div>
+    `;
+    
+    return card;
 }
 
     loadMoreProducts() {
@@ -567,10 +577,16 @@ class StyleAI {
     }
 
     async sendMessage() {
+        console.log('sendMessage called');
         const input = document.getElementById('messageInput');
         const message = input.value.trim();
         
-        if (!message) return;
+        console.log('Message:', message);
+        
+        if (!message) {
+            console.log('Empty message, returning');
+            return;
+        }
         
         // Hide empty state and show chat messages
         document.getElementById('emptyState').style.display = 'none';
