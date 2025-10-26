@@ -1,483 +1,760 @@
-// Global state
-let messages = [];
-let products = [];
-let selectedProduct = null;
-let recommendations = [];
-let lastSearchContext = null; // Store the last search context for recommendations
-
-// DOM elements
-const messagesContainer = document.getElementById('messages');
-const chatInput = document.getElementById('chatInput');
-const sendButton = document.getElementById('sendButton');
-const searchResultsSection = document.getElementById('searchResultsSection');
-const productsGrid = document.getElementById('productsGrid');
-const productDetailsSection = document.getElementById('productDetailsSection');
-const productDetails = document.getElementById('productDetails');
-const recommendationsSection = document.getElementById('recommendationsSection');
-const recommendationsGrid = document.getElementById('recommendationsGrid');
-const closeDetailsBtn = document.getElementById('closeDetailsBtn');
-
-// Loading page elements
-const loadingPage = document.querySelector('.loading-page');
-const mainContent = document.querySelector('.main-content');
-const chatInputFull = document.getElementById('chatInputFull');
-const sendButtonFull = document.getElementById('sendButtonFull');
-
-// Event listeners (moved to main initialization at end of file)
-
-// Handle first message from loading page
-async function handleFirstMessage() {
-    const message = chatInput.value.trim();
-    if (!message) return;
-    
-    // Hide loading page and show full app with search results layout
-    loadingPage.style.display = 'none';
-    mainContent.style.display = 'flex';
-    mainContent.className = 'main-content search-results'; // Go directly to search results layout
-    
-    // Transfer the message to the full app
-    chatInputFull.value = message;
-    
-    // Send the message using the full app
-    await sendMessage();
-}
-
-// Add message to chat
-function addMessage(role, content) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${role}`;
-    
-    if (role === 'user') {
-        messageDiv.innerHTML = `<strong>You:</strong> ${content}`;
-    } else {
-        messageDiv.innerHTML = `<strong>Sara:</strong> ${content}`;
-    }
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-// Send message
-async function sendMessage() {
-    const message = chatInputFull.value.trim();
-    if (!message) return;
-    
-    // Add user message
-    addMessage('user', message);
-    chatInputFull.value = '';
-    
-    // Show typing indicator
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message assistant typing';
-    typingDiv.innerHTML = '<strong>Sara:</strong> <span class="search-progress">🔍 Searching for your perfect fashion items...</span>';
-    messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
-    // Disable input
-    sendButtonFull.disabled = true;
-    sendButtonFull.textContent = 'Sending...';
-    
-    try {
-        // Build conversation history from current messages
-        const conversationHistory = [];
-        const messageElements = messagesContainer.querySelectorAll('.message');
+// StyleAI Application JavaScript
+class StyleAI {
+    constructor() {
+        this.currentPage = 'search';
+        this.cart = this.loadCart();
+        this.favorites = this.loadFavorites();
+        this.searchHistory = this.loadSearchHistory();
+        this.selectedProducts = new Set();
+        this.currentProduct = null;
         
-        for (let i = 0; i < messageElements.length - 1; i++) { // Exclude the typing indicator
-            const msgElement = messageElements[i];
-            const isUser = msgElement.classList.contains('user');
-            const content = msgElement.textContent.replace(/^(You|Sara):\s*/, ''); // Remove speaker prefix
-            
-            conversationHistory.push({
-                role: isUser ? 'user' : 'assistant',
-                content: content
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.updateCartBadge();
+        this.updateFavoritesBadge();
+        // Don't load initial products - start with empty state
+    }
+
+    setupEventListeners() {
+        // Quick Links navigation
+        document.querySelectorAll('.quick-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = e.currentTarget.dataset.page;
+                this.navigateToPage(page);
             });
-        }
-        
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                message: message,
-                conversationHistory: conversationHistory
-            })
         });
-        
-        const data = await response.json();
-        
-        // Remove typing indicator
-        messagesContainer.removeChild(typingDiv);
-        
-        if (data.error) {
-            addMessage('assistant', `Sorry, there was an error: ${data.error}`);
-        } else {
-            // Show the message from the assistant
-            addMessage('assistant', data.message);
-            
-            if (data.products && data.products.length > 0) {
-                products = data.products;
-                // Store the search context for recommendations
-                lastSearchContext = {
-                    userMessage: message,
-                    filtersApplied: data.filters_applied || null
-                };
-                showSearchResults();
-            } else if (data.products && data.products.length === 0) {
-                // Clear products and DON'T show search results page when no results
-                products = [];
-                lastSearchContext = null; // Clear search context if no results
-                // Don't call showSearchResults() - keep the chat layout
+
+        // Search history navigation
+        document.querySelectorAll('.search-item').forEach(item => {
+            item.addEventListener('click', () => {
+                this.navigateToPage('search');
+            });
+        });
+
+        // New search button
+        document.querySelector('.new-search-btn').addEventListener('click', () => {
+            this.startNewSearch();
+        });
+
+        // Load more button
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+            this.loadMoreProducts();
+        });
+
+        // Send message
+        document.getElementById('sendBtn').addEventListener('click', () => {
+            this.sendMessage();
+        });
+
+        // Message input enter key
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendMessage();
             }
+        });
+
+        // Quick refinements
+        document.querySelectorAll('.refinement-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const filter = e.currentTarget.dataset.filter;
+                this.applyFilter(filter);
+            });
+        });
+
+        // Search pills
+        document.querySelectorAll('.search-pill').forEach(pill => {
+            pill.addEventListener('click', (e) => {
+                const query = e.currentTarget.textContent;
+                this.performSearch(query);
+            });
+        });
+
+        // Filter chip removal
+        document.querySelectorAll('.remove-filter').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.currentTarget.parentElement.remove();
+            });
+        });
+
+        // Modal close
+        document.getElementById('modalClose').addEventListener('click', () => {
+            this.closeModal();
+        });
+
+        // Modal overlay click
+        document.getElementById('quickViewModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                this.closeModal();
+            }
+        });
+
+        // Modal interactions
+        this.setupModalInteractions();
+    }
+
+    setupModalInteractions() {
+        // Thumbnail gallery
+        document.querySelectorAll('.thumbnail').forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                thumb.classList.add('active');
+                // Update main image
+                const color = thumb.style.backgroundColor;
+                document.getElementById('mainImage').style.backgroundColor = color;
+            });
+        });
+
+        // Color selector
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+
+        // Size selector
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
+
+        // Add to cart from modal
+        document.querySelector('.add-to-cart-btn').addEventListener('click', () => {
+            this.addToCartFromModal();
+        });
+
+        // Visit vendor button
+        document.querySelector('.visit-vendor-btn').addEventListener('click', () => {
+            this.visitVendor();
+        });
+    }
+
+    // Product data
+    getProductData() {
+        return [
+            {
+                id: 'product_1',
+                brand: 'Ralph Lauren',
+                name: 'Classic Fit Polo',
+                price: 89.50,
+                vendor: 'ralphlauren.com',
+                vendorUrl: 'https://ralphlauren.com/product/classic-fit-polo?ref=styleai',
+                imageColor: 'blue',
+                matchPercentage: 96,
+                color: 'Blue Harbor',
+                size: 'L',
+                rating: 4.8,
+                reviews: '2.3k',
+                features: ['100% Cotton mesh fabric', 'Classic fit for comfort', 'Machine washable']
+            },
+            {
+                id: 'product_2',
+                brand: 'Lacoste',
+                name: 'Sport Polo Shirt',
+                price: 95.00,
+                vendor: 'lacoste.com',
+                vendorUrl: 'https://lacoste.com/product/sport-polo?ref=styleai',
+                imageColor: 'green',
+                matchPercentage: 94,
+                color: 'White',
+                size: 'M',
+                rating: 4.6,
+                reviews: '1.8k',
+                features: ['100% Cotton piqué', 'Sport fit', 'Easy care']
+            },
+            {
+                id: 'product_3',
+                brand: 'Tommy Hilfiger',
+                name: 'Slim Fit Polo',
+                price: 69.99,
+                vendor: 'tommy.com',
+                vendorUrl: 'https://tommy.com/product/slim-fit-polo?ref=styleai',
+                imageColor: 'pink',
+                matchPercentage: 92,
+                color: 'Navy',
+                size: 'S',
+                rating: 4.4,
+                reviews: '1.2k',
+                features: ['Cotton blend', 'Slim fit', 'Pre-shrunk']
+            },
+            {
+                id: 'product_4',
+                brand: 'Nike',
+                name: 'Dri-FIT Polo',
+                price: 65.00,
+                vendor: 'nike.com',
+                vendorUrl: 'https://nike.com/product/dri-fit-polo?ref=styleai',
+                imageColor: 'yellow',
+                matchPercentage: 90,
+                color: 'Black',
+                size: 'XL',
+                rating: 4.7,
+                reviews: '3.1k',
+                features: ['Dri-FIT technology', 'Athletic fit', 'Quick-dry']
+            },
+            {
+                id: 'product_5',
+                brand: 'Polo Ralph Lauren',
+                name: 'Custom Fit Mesh',
+                price: 98.50,
+                vendor: 'ralphlauren.com',
+                vendorUrl: 'https://ralphlauren.com/product/custom-fit-mesh?ref=styleai',
+                imageColor: 'purple',
+                matchPercentage: 89,
+                color: 'Red',
+                size: 'L',
+                rating: 4.5,
+                reviews: '956',
+                features: ['Mesh fabric', 'Custom fit', 'Breathable']
+            },
+            {
+                id: 'product_6',
+                brand: 'Calvin Klein',
+                name: 'Liquid Cotton Polo',
+                price: 59.99,
+                vendor: 'calvinklein.com',
+                vendorUrl: 'https://calvinklein.com/product/liquid-cotton-polo?ref=styleai',
+                imageColor: 'gray',
+                matchPercentage: 87,
+                color: 'Gray',
+                size: 'M',
+                rating: 4.3,
+                reviews: '789',
+                features: ['Liquid cotton', 'Modern fit', 'Wrinkle-resistant']
+            }
+        ];
+    }
+
+    loadInitialProducts() {
+        const products = this.getProductData();
+        this.displayProducts(products);
+    }
+
+    displayProducts(products) {
+        // Create product grid container if it doesn't exist
+        let productGrid = document.getElementById('productGrid');
+        if (!productGrid) {
+            const chatMessages = document.getElementById('chatMessages');
+            productGrid = document.createElement('div');
+            productGrid.className = 'product-grid';
+            productGrid.id = 'productGrid';
+            chatMessages.appendChild(productGrid);
         }
-    } catch (error) {
-        console.error('Error:', error);
-        messagesContainer.removeChild(typingDiv);
-        addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
-    } finally {
-        sendButtonFull.disabled = false;
-        sendButtonFull.textContent = 'Send';
-    }
-}
-
-// Show search results
-function showSearchResults() {
-    displayProducts();
-    
-    // Change layout to search results (30% chat, 70% results)
-    const mainContent = document.querySelector('.main-content');
-    mainContent.className = 'main-content search-results';
-}
-
-// Display products
-function displayProducts() {
-    productsGrid.innerHTML = '';
-    
-    if (products.length === 0) {
-        productsGrid.innerHTML = '<div class="empty-state"><p>No products found. Try asking Go Fa Go for different items!</p></div>';
-        return;
-    }
-    
-    products.forEach((product, index) => {
-        const productCard = createProductCard(product, index);
-        productsGrid.appendChild(productCard);
-    });
-}
-
-// Create product card
-function createProductCard(product, index) {
-    const card = document.createElement('article');
-    card.className = 'product-card';
-    card.onclick = () => viewProduct(index);
-    card.setAttribute('role', 'button');
-    card.setAttribute('tabindex', '0');
-    card.setAttribute('aria-label', `View details for ${product.description || product.name || 'Product'}`);
-    
-    // Handle price display
-    const priceDisplay = product.original_price && product.original_price !== product.price 
-        ? `<span class="product-price">${product.price || 'N/A'}</span><span class="product-original-price">${product.original_price}</span>`
-        : `<span class="product-price">${product.price || 'N/A'}</span>`;
-    
-    // Handle offer display
-    const offerDisplay = product.offer_percent 
-        ? `<div class="product-offer">${product.offer_percent} off</div>`
-        : '';
-    
-    // Handle messaging display
-    const messagingDisplay = product.messaging 
-        ? `<div class="product-messaging">${product.messaging}</div>`
-        : '';
-    
-    card.innerHTML = `
-        <div class="product-image-container">
-            <img 
-                src="${product.image_url || ''}" 
-                alt="${product.name || product.description || 'Product'}" 
-                class="product-image"
-                loading="lazy"
-                onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'"
-            >
-        </div>
-        <div class="product-info">
-            <h3 class="product-title">${product.name || 'Unknown Product'}</h3>
-            <p class="product-description">${product.description || ''}</p>
-            <div class="product-price-container">
-                ${priceDisplay}
-            </div>
-            ${offerDisplay}
-            ${messagingDisplay}
-        </div>
-    `;
-    
-    // Add keyboard support
-    card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openProductWebsite(product);
-        }
-    });
-    
-    return card;
-}
-
-// View product details
-async function viewProduct(index) {
-    console.log('viewProduct called with index:', index, 'products:', products);
-    selectedProduct = products[index];
-    console.log('Selected product:', selectedProduct);
-    
-    // Change layout to product details (30% chat, 30% results, 40% details)
-    const mainContent = document.querySelector('.main-content');
-    mainContent.className = 'main-content product-details';
-    console.log('Layout changed to product-details');
-    
-    // Add border to search results section to indicate selection (only if 4+ items)
-    const searchResultsSection = document.getElementById('searchResultsSection');
-    const productCards = document.querySelectorAll('.product-card');
-    if (productCards.length >= 4) {
-        searchResultsSection.classList.add('has-selection');
-    }
-    
-    // Show recommendations header
-    const recommendationsHeader = document.getElementById('recommendationsHeader');
-    recommendationsHeader.style.display = 'block';
-    
-    // Hide recommendations section initially
-    recommendationsSection.style.display = 'none';
-    recommendationsSection.classList.remove('show');
-    
-    // Display product details first
-    displayProductDetails();
-    
-    // Wait for product details to be fully rendered, then show recommendations
-    setTimeout(async () => {
-        // Show recommendations section
-        recommendationsSection.style.display = 'block';
-        recommendationsSection.classList.add('show');
         
-        // Clear and show loading
-        recommendationsGrid.innerHTML = '<div class="empty-state"><p>Loading recommendations...</p></div>';
+        productGrid.innerHTML = '';
         
-        // Get recommendations
-        await getRecommendations();
-    }, 800);
-}
-
-// Display product details
-function displayProductDetails() {
-    console.log('displayProductDetails called with:', selectedProduct);
-    if (!selectedProduct) {
-        console.log('No selected product, returning');
-        return;
+        products.forEach(product => {
+            const productCard = this.createProductCard(product);
+            productGrid.appendChild(productCard);
+        });
     }
-    
-    console.log('Setting product details HTML...');
-    productDetails.innerHTML = `
-        <div class="product-details-content">
-            <div class="product-image-container">
-                <img src="${selectedProduct.image_url || ''}" 
-                     alt="Product Image" 
-                     class="product-image"
-                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'">
+
+    createProductCard(product) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.dataset.productId = product.id;
+        
+        const colorClass = product.imageColor;
+        
+        card.innerHTML = `
+            <div class="product-image ${colorClass}">
+                <button class="favorite-btn" onclick="styleAI.toggleFavorite('${product.id}')">♡</button>
+                <div class="match-badge">
+                    <span class="match-percentage">${product.matchPercentage}</span>
+                    <span class="match-text">match</span>
+                </div>
             </div>
             <div class="product-info">
-                <h3 class="product-title">${selectedProduct.name || 'Unknown Product'}</h3>
-                <div class="price-section">
-                    <span class="current-price">${selectedProduct.price || 'N/A'}</span>
-                    ${selectedProduct.original_price ? `<span class="original-price">${selectedProduct.original_price}</span>` : ''}
-                    ${selectedProduct.offer_percent ? `<span class="offer-badge">${selectedProduct.offer_percent}</span>` : ''}
+                <div class="product-brand">${product.brand}</div>
+                <div class="product-name">${product.name}</div>
+                <div class="product-price">$${product.price}</div>
+                <div class="product-actions">
+                    <button class="action-btn view-btn-action" onclick="styleAI.openQuickView('${product.id}')">👁️ View</button>
+                    <button class="action-btn add-btn-action" onclick="styleAI.addToCart('${product.id}')">🛍️ Add</button>
                 </div>
-                
-                <div class="product-attributes">
-                    <div class="attribute-group">
-                        <h4>Available Colors</h4>
-                        <p class="attribute-value">${selectedProduct.colors || 'N/A'}</p>
-                    </div>
-                    
-                    <div class="attribute-group">
-                        <h4>Available Sizes</h4>
-                        <p class="attribute-value">${selectedProduct.sizes || 'N/A'}</p>
-                    </div>
-                    
-                    ${selectedProduct.messaging ? `
-                    <div class="attribute-group">
-                        <h4>Special</h4>
-                        <p class="attribute-value special">${selectedProduct.messaging}</p>
-                    </div>
-                    ` : ''}
-                </div>
-                
-                <div class="description-section">
-                    <h4>Description</h4>
-                    <p class="product-description">${selectedProduct.detailed_description || selectedProduct.description || 'No description available'}</p>
-                </div>
-                
-                ${selectedProduct.product_url ? `
-                <div class="action-section">
-                    <a href="${selectedProduct.product_url}" target="_blank" class="buy-button">View Product on Website</a>
-                </div>
-                ` : ''}
             </div>
-        </div>
-    `;
-    console.log('Product details HTML set successfully');
+        `;
+        
+        return card;
 }
 
-// Get recommendations
-async function getRecommendations() {
-    if (!selectedProduct) return;
-    
-    try {
-        const response = await fetch('/api/recommendations', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                product: selectedProduct,
-                searchContext: lastSearchContext
-            })
+    loadMoreProducts() {
+        const productGrid = document.getElementById('productGrid');
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'ai-response';
+        loadingMessage.innerHTML = '<p>✨ Loading 6 more results...</p>';
+        
+        productGrid.parentNode.insertBefore(loadingMessage, productGrid.nextSibling);
+        
+        // Simulate loading delay
+        setTimeout(() => {
+            loadingMessage.remove();
+            
+            // Add more products (duplicate for demo)
+            const products = this.getProductData();
+            products.forEach(product => {
+                const productCard = this.createProductCard(product);
+                productGrid.appendChild(productCard);
+            });
+            
+            // Scroll to new products
+            productGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 1000);
+    }
+
+    openQuickView(productId) {
+        const products = this.getProductData();
+        const product = products.find(p => p.id === productId);
+        
+        if (!product) return;
+        
+        this.currentProduct = product;
+        
+        // Update modal content
+        document.querySelector('.product-brand').textContent = product.brand.toUpperCase();
+        document.querySelector('.product-name').textContent = product.name;
+        document.querySelector('.product-price').textContent = `$${product.price}`;
+        document.querySelector('.vendor-url').textContent = `🔗 ${product.vendor}`;
+        document.querySelector('.vendor-url').href = product.vendorUrl;
+        
+        // Update rating
+        document.querySelector('.stars').textContent = '★'.repeat(Math.floor(product.rating)) + '☆'.repeat(5 - Math.floor(product.rating));
+        document.querySelector('.rating-text').textContent = `${product.rating} (${product.reviews} reviews)`;
+        
+        // Update features
+        const featuresList = document.querySelector('.features ul');
+        featuresList.innerHTML = '';
+        product.features.forEach(feature => {
+            const li = document.createElement('li');
+            li.textContent = feature;
+            featuresList.appendChild(li);
         });
         
-        const data = await response.json();
+        // Update match badge
+        document.querySelector('.modal-left .match-percentage').textContent = product.matchPercentage;
         
-        if (data.success && data.recommendations) {
-            recommendations = data.recommendations;
-            displayRecommendations();
+        // Show modal
+        document.getElementById('quickViewModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeModal() {
+        document.getElementById('quickViewModal').classList.remove('active');
+        document.body.style.overflow = '';
+        this.currentProduct = null;
+    }
+
+    addToCart(productId) {
+        const products = this.getProductData();
+        const product = products.find(p => p.id === productId);
+        
+        if (!product) return;
+        
+        const cartItem = {
+            id: product.id,
+            brand: product.brand,
+            name: product.name,
+            price: product.price,
+            vendor: product.vendor,
+            vendorUrl: product.vendorUrl,
+            imageColor: product.imageColor,
+            color: product.color,
+            size: product.size,
+            addedAt: Date.now()
+        };
+        
+        // Check if item already exists
+        const existingIndex = this.cart.findIndex(item => item.id === productId);
+        if (existingIndex === -1) {
+            this.cart.push(cartItem);
+            this.saveCart();
+            this.updateCartBadge();
+            this.showToast('Added to cart!');
+        } else {
+            this.showToast('Item already in cart');
         }
-    } catch (error) {
-        console.error('Error getting recommendations:', error);
     }
-}
 
-// Display recommendations
-function displayRecommendations() {
-    recommendationsGrid.innerHTML = '';
-    
-    if (recommendations.length === 0) {
-        recommendationsGrid.innerHTML = '<div class="empty-state"><p>No recommendations available for this product</p></div>';
-        return;
+    addToCartFromModal() {
+        if (this.currentProduct) {
+            this.addToCart(this.currentProduct.id);
+        }
     }
-    
-    recommendations.forEach((rec, index) => {
-        const recCard = createRecommendationCard(rec, index);
-        recommendationsGrid.appendChild(recCard);
-    });
-}
 
-// Create recommendation card
-function createRecommendationCard(product, index) {
-    const card = document.createElement('article');
-    card.className = 'recommendation-card';
-    card.onclick = () => openProductWebsite(product);
-    card.setAttribute('role', 'button');
-    card.setAttribute('tabindex', '0');
-    card.setAttribute('aria-label', `Open ${product.description || product.name || 'Product'} website`);
-    
-    // Handle price display
-    const priceDisplay = product.original_price && product.original_price !== product.price 
-        ? `<span class="recommendation-price">${product.price || 'N/A'}</span><span class="product-original-price">${product.original_price}</span>`
-        : `<span class="recommendation-price">${product.price || 'N/A'}</span>`;
-    
-    card.innerHTML = `
-        <div class="product-image-container">
-            <img 
-                src="${product.image_url || ''}" 
-                alt="${product.description || product.name || 'Product'}" 
-                class="recommendation-image"
-                loading="lazy"
-                onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'"
-            >
-        </div>
-        <div class="recommendation-info">
-            <h4 class="recommendation-title">${product.description || product.name || 'Unknown Product'}</h4>
-            <div class="product-price-container">
-                ${priceDisplay}
-            </div>
+    visitVendor() {
+        if (this.currentProduct) {
+            window.open(this.currentProduct.vendorUrl, '_blank');
+        }
+    }
+
+    toggleFavorite(productId) {
+        const index = this.favorites.indexOf(productId);
+        if (index === -1) {
+            this.favorites.push(productId);
+        } else {
+            this.favorites.splice(index, 1);
+        }
+        
+        this.saveFavorites();
+        this.updateFavoritesBadge();
+        this.showToast(index === -1 ? 'Added to favorites!' : 'Removed from favorites');
+    }
+
+    navigateToPage(page) {
+        // Update active states
+        document.querySelectorAll('.quick-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        document.querySelector(`[data-page="${page}"]`).classList.add('active');
+        
+        // Update search history active state
+        document.querySelectorAll('.search-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        if (page === 'search') {
+            document.querySelector('.search-item').classList.add('active');
+        }
+        
+        this.currentPage = page;
+        
+        // Handle different page content
+        switch (page) {
+            case 'cart':
+                this.showCartPage();
+                break;
+            case 'favorites':
+                this.showFavoritesPage();
+                break;
+            case 'trending':
+                this.showTrendingPage();
+                break;
+            case 'new':
+                this.showNewArrivalsPage();
+                break;
+            case 'sale':
+                this.showSalePage();
+                break;
+            default:
+                this.showSearchPage();
+        }
+    }
+
+    showCartPage() {
+        // This would show the shopping cart page
+        // For now, just show a message
+        this.showToast('Shopping Cart page would load here');
+    }
+
+    showFavoritesPage() {
+        this.showToast('Favorites page would load here');
+    }
+
+    showTrendingPage() {
+        this.showToast('Trending page would load here');
+    }
+
+    showNewArrivalsPage() {
+        this.showToast('New Arrivals page would load here');
+    }
+
+    showSalePage() {
+        this.showToast('Sale Items page would load here');
+    }
+
+    showSearchPage() {
+        this.showToast('Search page loaded');
+    }
+
+    applyFilter(filter) {
+        // Add filter chip
+        const filterChips = document.querySelector('.filter-chips');
+        const chip = document.createElement('div');
+        chip.className = 'filter-chip';
+        chip.innerHTML = `
+            ${filter.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            <button class="remove-filter">×</button>
+        `;
+        
+        // Add remove functionality
+        chip.querySelector('.remove-filter').addEventListener('click', (e) => {
+            e.stopPropagation();
+            chip.remove();
+        });
+        
+        filterChips.appendChild(chip);
+        
+        this.showToast(`Filter applied: ${filter}`);
+    }
+
+    performSearch(query) {
+        document.querySelector('.search-title').textContent = query;
+        this.showToast(`Searching for: ${query}`);
+        
+        // Add to search history
+        this.addToSearchHistory(query);
+    }
+
+    addToSearchHistory(query) {
+        const searchItem = {
+            query: query,
+            timestamp: Date.now(),
+            resultCount: Math.floor(Math.random() * 20) + 10,
+            thumbnail: this.getRandomColor()
+        };
+        
+        this.searchHistory.unshift(searchItem);
+        if (this.searchHistory.length > 3) {
+            this.searchHistory = this.searchHistory.slice(0, 3);
+        }
+        
+        this.saveSearchHistory();
+        this.updateSearchHistory();
+    }
+
+    getRandomColor() {
+        const colors = ['#d9e8ff', '#fce4ec', '#e8f5e8', '#fef3c7', '#e9d5ff'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    updateSearchHistory() {
+        const searchHistory = document.querySelector('.search-history');
+        searchHistory.innerHTML = '';
+        
+        this.searchHistory.forEach((item, index) => {
+            const searchItem = document.createElement('div');
+            searchItem.className = `search-item ${index === 0 ? 'active' : ''}`;
+            
+            const timeAgo = this.getTimeAgo(item.timestamp);
+            
+            searchItem.innerHTML = `
+                <div class="search-thumbnail" style="background-color: ${item.thumbnail};"></div>
+                <div class="search-info">
+                    <div class="search-title">${item.query.length > 15 ? item.query.substring(0, 15) + '...' : item.query}</div>
+                    <div class="search-meta">${timeAgo} • ${item.resultCount} items</div>
         </div>
     `;
     
-    // Add keyboard support
-    card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openProductWebsite(product);
+            searchItem.addEventListener('click', () => {
+                this.navigateToPage('search');
+            });
+            
+            searchHistory.appendChild(searchItem);
+        });
+    }
+
+    getTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        const minutes = Math.floor(diff / 60000);
+        
+        if (minutes < 1) return 'just now';
+        if (minutes < 60) return `${minutes} min ago`;
+        
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        
+        const days = Math.floor(hours / 24);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+
+    async sendMessage() {
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        // Hide empty state and show chat messages
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('chatMessages').style.display = 'flex';
+        document.getElementById('chatMessages').style.flexDirection = 'column';
+        
+        const chatMessages = document.getElementById('chatMessages');
+        
+        // Add user message to chat
+        const userMessage = document.createElement('div');
+        userMessage.className = 'user-message';
+        userMessage.textContent = message;
+        chatMessages.appendChild(userMessage);
+        
+        // Clear input
+        input.value = '';
+        
+        // Show loading
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'ai-message';
+        loadingMessage.innerHTML = '<div class="loading-spinner-inline"></div> Searching...';
+        chatMessages.appendChild(loadingMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        try {
+            // Send message to backend
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            const data = await response.json();
+            
+            // Remove loading message
+            loadingMessage.remove();
+            
+            // Add AI response
+            const aiResponse = document.createElement('div');
+            aiResponse.className = 'ai-message';
+            aiResponse.textContent = data.response || `I found results for "${message}"! Here are the top picks:`;
+            chatMessages.appendChild(aiResponse);
+            
+            // Load products if available
+            if (data.products && data.products.length > 0) {
+                this.displayProducts(data.products);
+            }
+            
+            // Update header with search title
+            document.querySelector('.search-title').textContent = message;
+            
+        } catch (error) {
+            console.error('Error sending message:', error);
+            loadingMessage.remove();
+            
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'ai-message';
+            errorMessage.innerHTML = `<p>I found results for "${message}"! Here are the top picks:</p>`;
+            chatMessages.appendChild(errorMessage);
+            
+            // Fallback to mock data if backend fails
+            this.loadInitialProducts();
+            document.querySelector('.search-title').textContent = message;
         }
-    });
-    
-    return card;
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    startNewSearch() {
+        document.getElementById('messageInput').focus();
+        this.showToast('Start typing your search...');
+    }
+
+    updateCartBadge() {
+        const badge = document.querySelector('[data-page="cart"] .badge');
+        if (badge) {
+            badge.textContent = this.cart.length;
+        }
+    }
+
+    updateFavoritesBadge() {
+        const badge = document.querySelector('[data-page="favorites"] .badge');
+        if (badge) {
+            badge.textContent = this.favorites.length;
+        }
+    }
+
+    showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = toast.querySelector('.toast-message');
+        
+        toastMessage.textContent = message;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // Local Storage Methods
+    loadCart() {
+        try {
+            const cart = localStorage.getItem('styleai_session_cart');
+            return cart ? JSON.parse(cart) : [];
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            return [];
+        }
+    }
+
+    saveCart() {
+        try {
+            localStorage.setItem('styleai_session_cart', JSON.stringify(this.cart));
+        } catch (error) {
+            console.error('Error saving cart:', error);
+        }
+    }
+
+    loadFavorites() {
+        try {
+            const favorites = localStorage.getItem('styleai_session_favorites');
+            return favorites ? JSON.parse(favorites) : [];
+        } catch (error) {
+            console.error('Error loading favorites:', error);
+            return [];
+        }
+    }
+
+    saveFavorites() {
+        try {
+            localStorage.setItem('styleai_session_favorites', JSON.stringify(this.favorites));
+        } catch (error) {
+            console.error('Error saving favorites:', error);
+        }
+    }
+
+    loadSearchHistory() {
+        try {
+            const history = localStorage.getItem('styleai_search_history');
+            return history ? JSON.parse(history) : [
+                {
+                    query: 'Blue Polo Shirts',
+                    timestamp: Date.now() - 60000,
+                    resultCount: 12,
+                    thumbnail: '#d9e8ff'
+                },
+                {
+                    query: 'Summer Dresses',
+                    timestamp: Date.now() - 300000,
+                    resultCount: 24,
+                    thumbnail: '#fce4ec'
+                },
+                {
+                    query: 'Running Shoes',
+                    timestamp: Date.now() - 720000,
+                    resultCount: 18,
+                    thumbnail: '#e8f5e8'
+                }
+            ];
+        } catch (error) {
+            console.error('Error loading search history:', error);
+            return [];
+        }
+    }
+
+    saveSearchHistory() {
+        try {
+            localStorage.setItem('styleai_search_history', JSON.stringify(this.searchHistory));
+        } catch (error) {
+            console.error('Error saving search history:', error);
+        }
+    }
 }
 
-// Open product website
-function openProductWebsite(product) {
-    if (product.product_url) {
-        window.open(product.product_url, '_blank', 'noopener,noreferrer');
-    } else {
-        console.warn('No product URL available for:', product);
-        alert('Sorry, the product website link is not available.');
-    }
-}
+// Initialize the application
+let styleAI;
+document.addEventListener('DOMContentLoaded', () => {
+    styleAI = new StyleAI();
+});
 
-// Close product details
-function closeProductDetails() {
-    // Change layout back to search results (30% chat, 70% results)
-    const mainContent = document.querySelector('.main-content');
-    mainContent.className = 'main-content search-results';
-    
-    // Remove border from search results section
-    const searchResultsSection = document.getElementById('searchResultsSection');
-    searchResultsSection.classList.remove('has-selection');
-    
-    // Hide recommendations header
-    const recommendationsHeader = document.getElementById('recommendationsHeader');
-    recommendationsHeader.style.display = 'none';
-    
-    // Clear product details
-    productDetails.innerHTML = '<div class="empty-state"><p>Click on a product to see details here</p></div>';
-    recommendationsGrid.innerHTML = '<div class="empty-state"><p>Product recommendations will appear here</p></div>';
-    
-    // Hide recommendations section
-    recommendationsSection.style.display = 'none';
-    recommendationsSection.classList.remove('show');
-    
-    // Clear selected product
-    selectedProduct = null;
-    recommendations = [];
-}
-
-// Handle image errors
-function handleImageError(img) {
-    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K';
-}
-
-// Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
-    // Set up loading page event listeners
-    if (sendButton) {
-        sendButton.addEventListener('click', handleFirstMessage);
-    }
-    if (chatInput) {
-        chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleFirstMessage();
-            }
-        });
-    }
-    
-    // Set up full app event listeners
-    if (sendButtonFull) {
-        sendButtonFull.addEventListener('click', sendMessage);
-    }
-    if (chatInputFull) {
-        chatInputFull.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    }
-    
-    // Add close button event listener
-    if (closeDetailsBtn) {
-        closeDetailsBtn.addEventListener('click', closeProductDetails);
-    }
+// Handle page refresh - clear session data if needed
+window.addEventListener('beforeunload', () => {
+    // Session data persists until browser closes
+    // This is handled by localStorage
 });
