@@ -247,7 +247,7 @@ async def filter_products(
                 return str(value)
             
             product = {
-                "id": len(products) + 1,
+                "id": safe_str(row['ProductID']),  # Use ProductID from CSV
                 "name": safe_str(row['Category']),  # Product brand/name
                 "description": safe_str(row['Category.1']),  # Product description
                 "detailed_description": safe_str(row['Detailed description']),

@@ -312,7 +312,8 @@ class StyleAI {
 
     createProductCard(product, index = 0) {
         const card = document.createElement('div');
-        const productId = product.product_id || product.id || `product_${index}`;
+        // Backend returns 'id' as the product ID from CSV
+        const productId = product.id || product.product_id || `product_${index}`;
         card.className = 'product-card';
         card.dataset.productId = productId;
         
@@ -374,19 +375,24 @@ class StyleAI {
     openQuickView(productId) {
         console.log('Opening quick view for product:', productId);
         
+        console.log('Current products data:', this.productsData);
+        
         // Try to find product in displayed products first
         let product = null;
         if (this.productsData) {
             product = this.productsData.find(p => {
-                const pId = p.product_id || p.id || '';
-                return pId === productId;
+                const pId = p.id || p.product_id || '';
+                console.log('Comparing:', pId, 'with', productId);
+                return String(pId) === String(productId);
             });
         }
         
         if (!product) {
-            console.error('Product not found:', productId);
+            console.error('Product not found:', productId, 'Available IDs:', this.productsData?.map(p => p.id || p.product_id));
             return;
         }
+        
+        console.log('Found product:', product);
         
         this.currentProduct = product;
         
