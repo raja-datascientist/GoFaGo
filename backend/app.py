@@ -32,21 +32,27 @@ async def filter_products(
     color: str = None,
     size: str = None,
     search_term: str = None,
-    limit: int = 20
+    min_price: float = None,
+    max_price: float = None,
+    sort_by_price: str = None,
+    limit: int = 100
 ) -> str:
-    """Filter products based on gender, category, color, size, and search terms.
+    """Filter products based on gender, category, color, size, price range, and search terms.
     
     EXTRACT THESE ENTITIES from user queries:
     - gender: 'men', 'women', 'male', 'female' (matches 'Men's' or 'Women's' in product descriptions)
     - category: 'hoodie', 'pants', 'shirt', 'sweatshirt', 'jacket', 'top'
     - color: 'black', 'white', 'blue', 'red', 'pink', 'brown', 'gray'
     - size: 'S', 'M', 'L', 'XL', 'small', 'medium', 'large'
+    - price: 'cheapest', 'under $50', 'under $100', 'expensive', 'budget', 'affordable'
     
     Examples:
     - "men hoodie" → gender='men', category='hoodie'
     - "women black pants" → gender='women', category='pants', color='black'
     - "blue shirt" → category='shirt', color='blue'
-    - "hoodie" → category='hoodie' (finds all hoodies)
+    - "cheapest hoodie" → category='hoodie', sort_by_price='asc'
+    - "under $50" → max_price=50
+    - "expensive jacket" → category='jacket', sort_by_price='desc'
     
     Args:
         gender: Product gender - 'men', 'women', 'male', 'female'
@@ -54,7 +60,10 @@ async def filter_products(
         color: Product color - 'black', 'white', 'blue', 'red', 'pink', 'brown', 'gray'
         size: Product size - 'S', 'M', 'L', 'XL', 'small', 'medium', 'large'
         search_term: Fallback search term for complex queries
-        limit: Maximum number of products to return (default: 20)
+        min_price: Minimum price filter (float)
+        max_price: Maximum price filter (float)
+        sort_by_price: Sort by price - 'asc' for cheapest first, 'desc' for most expensive first
+        limit: Maximum number of products to return (default: 100)
     
     Returns:
         JSON string containing filtered products
@@ -65,7 +74,7 @@ async def filter_products(
         
         filtered_df = df.copy()
         logger.info(f"Starting filter with {len(filtered_df)} products")
-        logger.info(f"Filters - gender: {gender}, category: {category}, color: {color}, size: {size}, search_term: {search_term}")
+        logger.info(f"Filters - gender: {gender}, category: {category}, color: {color}, size: {size}, search_term: {search_term}, min_price: {min_price}, max_price: {max_price}, sort_by_price: {sort_by_price}")
         
         # Apply gender filter first (most important for strict matching)
         if gender and len(filtered_df) > 0:
@@ -110,6 +119,38 @@ async def filter_products(
             size_mask = filtered_df['Sizes'].str.contains(size, case=False, na=False)
             logger.info(f"Size filter '{size}': {size_mask.sum()} matches")
             filtered_df = filtered_df[size_mask]
+        
+        # Apply price filters
+        if (min_price is not None or max_price is not None) and len(filtered_df) > 0:
+            # Convert price column to numeric, handling any non-numeric values
+            price_series = pd.to_numeric(filtered_df['Current Price'].str.replace('$', '').str.replace(',', '').str.replace('\u00a0', ''), errors='coerce')
+            
+            if min_price is not None:
+                price_mask = price_series >= min_price
+                logger.info(f"Min price filter '${min_price}': {price_mask.sum()} matches")
+                filtered_df = filtered_df[price_mask]
+            
+            if max_price is not None:
+                price_mask = price_series <= max_price
+                logger.info(f"Max price filter '${max_price}': {price_mask.sum()} matches")
+                filtered_df = filtered_df[price_mask]
+        
+        # Apply price sorting
+        if sort_by_price and len(filtered_df) > 0:
+            # Convert price column to numeric for sorting
+            price_series = pd.to_numeric(filtered_df['Current Price'].str.replace('$', '').str.replace(',', '').str.replace('\u00a0', ''), errors='coerce')
+            filtered_df = filtered_df.copy()
+            filtered_df['numeric_price'] = price_series
+            
+            if sort_by_price.lower() == 'asc':
+                filtered_df = filtered_df.sort_values('numeric_price', ascending=True)
+                logger.info(f"Sorted by price ascending (cheapest first)")
+            elif sort_by_price.lower() == 'desc':
+                filtered_df = filtered_df.sort_values('numeric_price', ascending=False)
+                logger.info(f"Sorted by price descending (most expensive first)")
+            
+            # Remove the temporary numeric_price column
+            filtered_df = filtered_df.drop('numeric_price', axis=1)
         
         # If search_term is provided, use it as additional filter (fallback)
         if search_term:
@@ -227,10 +268,14 @@ async def filter_products(
             "products": products,
             "total_count": len(products),
             "filters_applied": {
+                "gender": gender,
                 "category": category,
                 "color": color,
                 "size": size,
-                "search_term": search_term
+                "search_term": search_term,
+                "min_price": min_price,
+                "max_price": max_price,
+                "sort_by_price": sort_by_price
             }
         }
         
@@ -264,13 +309,32 @@ async def filter_products(
 @mcp.tool()
 async def get_similar_products(
     product_description: str,
-    current_product: str
+    current_product: str,
+    gender: str = None,
+    category: str = None,
+    color: str = None,
+    size: str = None,
+    min_price: float = None,
+    max_price: float = None,
+    sort_by_price: str = None,
+    limit: int = 4
 ) -> str:
     """Get similar/recommended products based on the current product using AI-style pairing logic.
+    
+    This tool analyzes the clicked product and intelligently recommends complementary items
+    that would pair well with it, using fashion knowledge and color coordination.
     
     Args:
         product_description: Description of the current product
         current_product: JSON string of current product object with name, colors, etc.
+        gender: Filter by gender - 'men', 'women', 'male', 'female'
+        category: Filter by category - 'hoodie', 'pants', 'shirt', 'sweatshirt', 'jacket', 'top'
+        color: Filter by color - 'black', 'white', 'blue', 'red', 'pink', 'brown', 'gray'
+        size: Filter by size - 'S', 'M', 'L', 'XL', 'small', 'medium', 'large'
+        min_price: Minimum price filter (float)
+        max_price: Maximum price filter (float)
+        sort_by_price: Sort by price - 'asc' for cheapest first, 'desc' for most expensive first
+        limit: Maximum number of products to return (default: 4)
     
     Returns:
         JSON string containing recommended products
@@ -282,73 +346,163 @@ async def get_similar_products(
         # Parse current product
         current_product_obj = json.loads(current_product) if isinstance(current_product, str) else current_product
         
-        # AI-style pairing logic based on the selected item
-        pairing_terms = []
+        # Start with all products
+        filtered_df = df.copy()
+        logger.info(f"Starting recommendations with {len(filtered_df)} products")
+        logger.info(f"Current product: {current_product_obj.get('description', 'N/A')}")
+        logger.info(f"Filters - gender: {gender}, category: {category}, color: {color}, size: {size}, min_price: {min_price}, max_price: {max_price}, sort_by_price: {sort_by_price}")
         
-        # Analyze the current product to determine pairing items
-        product_name = current_product_obj.get('name', '').lower()
-        product_colors = current_product_obj.get('colors', '').lower()
+        # Apply gender filter first (most important for strict matching)
+        if gender and len(filtered_df) > 0:
+            gender_lower = gender.lower()
+            if gender_lower in ['men', 'male']:
+                gender_mask = filtered_df['Gender'] == 'Men'
+                logger.info(f"Gender filter 'men': {gender_mask.sum()} matches")
+                filtered_df = filtered_df[gender_mask]
+            elif gender_lower in ['women', 'female']:
+                gender_mask = filtered_df['Gender'] == 'Women'
+                logger.info(f"Gender filter 'women': {gender_mask.sum()} matches")
+                filtered_df = filtered_df[gender_mask]
         
-        # Determine what type of item this is and what would pair well
-        if any(word in product_name for word in ['hoodie', 'sweatshirt', 'crew', 'fleece', 'sweater']):
-            # This is a top - suggest bottoms and shoes
-            pairing_terms.extend(['pant', 'legging', 'sweatpant', 'jogger', 'short'])
-        elif any(word in product_name for word in ['pant', 'legging', 'sweatpant', 'jogger']):
-            # This is a bottom - suggest tops and shoes
-            pairing_terms.extend(['hoodie', 'sweatshirt', 'crew', 'fleece', 'sweater', 'top', 'shirt'])
-        elif any(word in product_name for word in ['dress', 'skirt']):
-            # This is a dress - suggest shoes and accessories
-            pairing_terms.extend(['shoe', 'sneaker', 'boot'])
+        # Apply category filter
+        if category and len(filtered_df) > 0:
+            category_lower = category.lower()
+            category_patterns = {
+                'hoodie': 'hoodie|sweatshirt',
+                'pants': 'pants|trousers|sweatpants',
+                'shirt': 'shirt|top|blouse',
+                'sweatshirt': 'sweatshirt|hoodie',
+                'jacket': 'jacket|coat|blazer',
+                'top': 'top|shirt|blouse'
+            }
+            
+            search_pattern = category_patterns.get(category_lower, category_lower)
+            category_mask = filtered_df['Category.1'].str.contains(search_pattern, case=False, na=False)
+            logger.info(f"Category filter '{category}': {category_mask.sum()} matches")
+            filtered_df = filtered_df[category_mask]
         
-        # Color pairing logic
-        if 'black' in product_colors or 'navy' in product_colors:
-            pairing_terms.extend(['white', 'gray', 'beige', 'cream'])
-        elif 'white' in product_colors or 'cream' in product_colors:
-            pairing_terms.extend(['black', 'navy', 'brown', 'gray'])
-        elif 'blue' in product_colors:
-            pairing_terms.extend(['black', 'white', 'gray', 'navy'])
-        elif 'pink' in product_colors or 'red' in product_colors:
-            pairing_terms.extend(['black', 'white', 'gray', 'navy'])
+        # Apply color filter
+        if color and len(filtered_df) > 0:
+            color_mask = filtered_df['Colors'].str.contains(color, case=False, na=False)
+            logger.info(f"Color filter '{color}': {color_mask.sum()} matches")
+            filtered_df = filtered_df[color_mask]
         
-        # Search for pairing products
-        similar_df = df.copy()
+        # Apply size filter
+        if size and len(filtered_df) > 0:
+            size_mask = filtered_df['Sizes'].str.contains(size, case=False, na=False)
+            logger.info(f"Size filter '{size}': {size_mask.sum()} matches")
+            filtered_df = filtered_df[size_mask]
         
-        if pairing_terms:
-            mask = similar_df['Category.1'].str.contains('|'.join(pairing_terms), case=False, na=False)
-            similar_df = similar_df[mask]
+        # Apply price filters
+        if (min_price is not None or max_price is not None) and len(filtered_df) > 0:
+            price_series = pd.to_numeric(filtered_df['Current Price'].str.replace('$', '').str.replace(',', '').str.replace('\u00a0', ''), errors='coerce')
+            
+            if min_price is not None:
+                price_mask = price_series >= min_price
+                logger.info(f"Min price filter '${min_price}': {price_mask.sum()} matches")
+                filtered_df = filtered_df[price_mask]
+            
+            if max_price is not None:
+                price_mask = price_series <= max_price
+                logger.info(f"Max price filter '${max_price}': {price_mask.sum()} matches")
+                filtered_df = filtered_df[price_mask]
         
-        # If no matches found, get products from the same brand/category
-        if similar_df.empty:
-            similar_df = df[df['Category'].str.contains('Nike', case=False, na=False)]
+        # Apply price sorting
+        if sort_by_price and len(filtered_df) > 0:
+            price_series = pd.to_numeric(filtered_df['Current Price'].str.replace('$', '').str.replace(',', '').str.replace('\u00a0', ''), errors='coerce')
+            filtered_df = filtered_df.copy()
+            filtered_df['numeric_price'] = price_series
+            
+            if sort_by_price.lower() == 'asc':
+                filtered_df = filtered_df.sort_values('numeric_price', ascending=True)
+                logger.info(f"Sorted by price ascending (cheapest first)")
+            elif sort_by_price.lower() == 'desc':
+                filtered_df = filtered_df.sort_values('numeric_price', ascending=False)
+                logger.info(f"Sorted by price descending (most expensive first)")
+            
+            filtered_df = filtered_df.drop('numeric_price', axis=1)
         
-        # If still no matches, get random products
-        if similar_df.empty:
-            similar_df = df.sample(n=min(4, len(df)))
+        # If no products found after filtering, try to find complementary items based on the current product
+        if len(filtered_df) == 0:
+            logger.info("No products found with filters, trying complementary pairing logic...")
+            
+            # AI-style pairing logic based on the selected item
+            pairing_terms = []
+            product_name = current_product_obj.get('description', '').lower()
+            product_colors = current_product_obj.get('colors', '').lower()
+            
+            # Determine what type of item this is and what would pair well
+            if any(word in product_name for word in ['hoodie', 'sweatshirt', 'crew', 'fleece', 'sweater', 'top', 'shirt']):
+                # This is a top - suggest bottoms
+                pairing_terms.extend(['pant', 'legging', 'sweatpant', 'jogger', 'short'])
+            elif any(word in product_name for word in ['pant', 'legging', 'sweatpant', 'jogger', 'short']):
+                # This is a bottom - suggest tops
+                pairing_terms.extend(['hoodie', 'sweatshirt', 'crew', 'fleece', 'sweater', 'top', 'shirt'])
+            elif any(word in product_name for word in ['dress', 'skirt']):
+                # This is a dress - suggest accessories
+                pairing_terms.extend(['jacket', 'cardigan', 'blazer'])
+            
+            # Color pairing logic
+            if 'black' in product_colors or 'navy' in product_colors:
+                pairing_terms.extend(['white', 'gray', 'beige', 'cream'])
+            elif 'white' in product_colors or 'cream' in product_colors:
+                pairing_terms.extend(['black', 'navy', 'brown', 'gray'])
+            elif 'blue' in product_colors:
+                pairing_terms.extend(['black', 'white', 'gray', 'navy'])
+            elif 'pink' in product_colors or 'red' in product_colors:
+                pairing_terms.extend(['black', 'white', 'gray', 'navy'])
+            
+            # Search for pairing products
+            if pairing_terms:
+                mask = df['Category.1'].str.contains('|'.join(pairing_terms), case=False, na=False)
+                filtered_df = df[mask]
+                logger.info(f"Found {len(filtered_df)} complementary items")
+            
+            # If still no matches, get products from the same brand
+            if len(filtered_df) == 0:
+                filtered_df = df[df['Category'].str.contains('Nike', case=False, na=False)]
+                logger.info(f"Fallback to Nike products: {len(filtered_df)} items")
+        
+        logger.info(f"Final recommendation results: {len(filtered_df)} products")
         
         # Convert to list of dictionaries with safe string conversion
-        similar_products = []
-        for _, row in similar_df.head(4).iterrows():
+        recommendations = []
+        for _, row in filtered_df.head(limit).iterrows():
             def safe_str(value):
                 if pd.isna(value) or value is None:
                     return ""
                 return str(value)
             
             product = {
-                "id": len(similar_products) + 1,
+                "id": len(recommendations) + 1,
                 "name": safe_str(row['Category']),
                 "description": safe_str(row['Category.1']),
+                "detailed_description": safe_str(row['Detailed description']),
                 "price": safe_str(row['Current Price']),
+                "original_price": safe_str(row['Original Price']),
                 "image_url": safe_str(row['Image Url']),
                 "product_url": safe_str(row['Product page url']),
                 "sizes": safe_str(row['Sizes']),
-                "colors": safe_str(row['Colors'])
+                "colors": safe_str(row['Colors']),
+                "messaging": safe_str(row['productcard_messaging']),
+                "offer_percent": safe_str(row['Offer %']),
+                "gender": safe_str(row['Gender'])
             }
-            similar_products.append(product)
+            recommendations.append(product)
         
         result = {
             "success": True,
-            "recommendations": similar_products,
-            "total_count": len(similar_products)
+            "recommendations": recommendations,
+            "total_count": len(recommendations),
+            "filters_applied": {
+                "gender": gender,
+                "category": category,
+                "color": color,
+                "size": size,
+                "min_price": min_price,
+                "max_price": max_price,
+                "sort_by_price": sort_by_price
+            }
         }
         return json.dumps(result)
         

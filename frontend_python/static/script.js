@@ -3,6 +3,7 @@ let messages = [];
 let products = [];
 let selectedProduct = null;
 let recommendations = [];
+let lastSearchContext = null; // Store the last search context for recommendations
 
 // DOM elements
 const messagesContainer = document.getElementById('messages');
@@ -75,10 +76,16 @@ async function sendMessage() {
             
             if (data.products && data.products.length > 0) {
                 products = data.products;
+                // Store the search context for recommendations
+                lastSearchContext = {
+                    userMessage: message,
+                    filtersApplied: data.filters_applied || null
+                };
                 showSearchResults();
             } else if (data.products && data.products.length === 0) {
                 // Clear products and show empty state
                 products = [];
+                lastSearchContext = null; // Clear search context if no results
                 showSearchResults();
             }
         }
@@ -278,7 +285,10 @@ async function getRecommendations() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ product: selectedProduct })
+            body: JSON.stringify({ 
+                product: selectedProduct,
+                searchContext: lastSearchContext
+            })
         });
         
         const data = await response.json();
