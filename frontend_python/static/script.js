@@ -106,32 +106,46 @@ class StyleAI {
         // Modal interactions
         this.setupModalInteractions();
         
-        // Event delegation for dynamically created buttons
+        // Use event delegation at document level for all dynamically created buttons
         document.addEventListener('click', (e) => {
+            console.log('Click event:', e.target);
+            
+            // Handle View button
             if (e.target.classList.contains('view-btn-action')) {
                 const productId = e.target.getAttribute('data-product-id');
+                console.log('View button clicked for:', productId);
                 if (productId) {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.openQuickView(productId);
+                    return false;
                 }
             }
             
+            // Handle Add button
             if (e.target.classList.contains('add-btn-action')) {
                 const productId = e.target.getAttribute('data-product-id');
+                console.log('Add button clicked for:', productId);
                 if (productId) {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.addToCart(productId);
+                    return false;
                 }
             }
             
+            // Handle Quick View button in recommendations
             if (e.target.classList.contains('quick-view-btn')) {
-                const productId = e.target.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+                const productId = e.target.getAttribute('data-product-id');
+                console.log('Quick view button clicked for:', productId);
                 if (productId) {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.openQuickView(productId);
+                    return false;
                 }
             }
-        });
+        }, true); // Use capture phase
     }
 
     setupModalInteractions() {
@@ -479,7 +493,7 @@ class StyleAI {
                 <div class="look-info">
                     <div class="look-name">${product.name || product.title || 'Product'}</div>
                     <div class="look-price">$${product.price || product.current_price || '0.00'}</div>
-                    <button class="quick-view-btn" onclick="styleAI.openQuickView('${productId}')">Quick View</button>
+                    <button class="quick-view-btn" data-product-id="${productId}">Quick View</button>
                 </div>
             `;
             
