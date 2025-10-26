@@ -17,8 +17,8 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <h1>Go Fa Go</h1>
-                    <p class="tagline">Smart Fashion Search</p>
+                    <h1>Go Fashion Go</h1>
+                    <p class="tagline">AI Search for Premium Brands</p>
                 </div>
                 <button class="new-search-btn">
                     <span class="plus-icon">+</span>
@@ -91,23 +91,13 @@
             <!-- Center Panel -->
             <section class="center-panel">
                 <div class="chat-container">
-                    <!-- Chat Header -->
-                    <div class="chat-header">
-                        <h2 class="search-title">Go Fa Go</h2>
-                        <div class="view-toggle">
-                            <button class="view-btn active">Grid</button>
-                            <button class="view-btn">List</button>
-                            <button class="view-btn">Card</button>
-                        </div>
-                    </div>
-
                     <!-- Scrollable Area -->
                     <div class="chat-scrollable-area">
                         <!-- Empty State -->
                         <div class="empty-state" id="emptyState">
                             <div class="empty-message">
-                                <h3>Welcome to Go Fa Go</h3>
-                                <p>Ask me about fashion products, styling tips, or find the perfect outfit for any occasion</p>
+                                <h3>Welcome to Go Fashion Go</h3>
+                                <p>Discover premium fashion with AI-powered search. Find the perfect outfits, styling tips, and curated recommendations just for you.</p>
                             </div>
                         </div>
 
@@ -116,6 +106,9 @@
                         
                         <!-- Product Grid Container -->
                         <div id="productGridContainer"></div>
+                        
+                        <!-- Filter Chips -->
+                        <div class="filter-chips"></div>
                     </div>
 
                     <!-- Message Input -->
@@ -128,15 +121,11 @@
 
             <!-- Right Panel -->
             <aside class="right-panel">
-                <!-- Product Insights -->
-                <div class="insights-section">
-                    <h3>Product Insights</h3>
-                    <div class="insight-card">
-                        <h4>AI Recommendations</h4>
-                        <ul>
-                            <li>Ralph Lauren Classic Fit is most popular for your style</li>
-                            <li>8 items match your budget</li>
-                        </ul>
+                <!-- Complete The Look -->
+                <div class="complete-look-section">
+                    <h3>Complete The Look</h3>
+                    <div class="look-items" id="lookItems">
+                        <!-- Recommendations will be loaded here dynamically -->
                     </div>
                 </div>
 
@@ -160,14 +149,6 @@
                             Sustainable
                             <span class="arrow">→</span>
                         </button>
-                    </div>
-                </div>
-
-                <!-- Complete The Look -->
-                <div class="complete-look-section">
-                    <h3>Complete The Look</h3>
-                    <div class="look-items" id="lookItems">
-                        <!-- Recommendations will be loaded here dynamically -->
                     </div>
                 </div>
 
@@ -210,59 +191,43 @@
 
                 <!-- Right Side - Product Details -->
                 <div class="modal-right">
-                    <div class="product-brand">RALPH LAUREN</div>
-                    <h2 class="product-name">Classic Fit Mesh Polo Shirt</h2>
+                    <div class="product-brand">NIKE</div>
+                    <h2 class="product-name">Product Name</h2>
                     
                     <div class="product-rating">
                         <div class="stars">★★★★☆</div>
-                        <span class="rating-text">4.8 (2.3k reviews)</span>
+                        <span class="rating-text">4.5</span>
                     </div>
 
-                    <div class="product-price">$89.50</div>
+                    <div class="product-price">$0.00</div>
 
-                    <div class="vendor-link">
-                        Available at: <a href="#" class="vendor-url">🔗 ralphlauren.com</a>
+                    <div class="vendor-link" style="margin-bottom: 16px;">
+                        <a href="#" class="vendor-url">🔗 Loading...</a>
                     </div>
 
-                    <div class="ai-insight">
+                    <div class="ai-insight" style="margin-bottom: 24px;">
                         <span class="insight-icon">✨</span>
-                        <span class="insight-text">AI Insight: Best match for your style! Popular choice</span>
+                        <span class="insight-text">AI Insight: Best match for your style!</span>
                     </div>
 
-                    <div class="color-selector">
-                        <label>Color: Blue Harbor</label>
-                        <div class="color-options">
-                            <div class="color-option selected" style="background-color: #d9e8ff; border: 2px solid #667eea;"></div>
-                            <div class="color-option" style="background-color: #ffffff;"></div>
-                            <div class="color-option" style="background-color: #1a365d;"></div>
-                            <div class="color-option" style="background-color: #e2e8f0;"></div>
-                            <div class="color-option" style="background-color: #2d5016;"></div>
-                        </div>
+                    <div class="color-selector" style="margin-bottom: 16px; padding: 12px; background: #f1f5f9; border-radius: 8px;">
+                        <label style="font-weight: 600; color: #475569;">Available Colors: Loading...</label>
                     </div>
 
-                    <div class="size-selector">
-                        <label>Size:</label>
-                        <div class="size-options">
-                            <button class="size-btn">S</button>
-                            <button class="size-btn">M</button>
-                            <button class="size-btn selected">L</button>
-                            <button class="size-btn">XL</button>
-                            <button class="size-btn">XXL</button>
-                        </div>
+                    <div class="size-selector" style="margin-bottom: 16px; padding: 12px; background: #f1f5f9; border-radius: 8px;">
+                        <label style="font-weight: 600; color: #475569;">Available Sizes: Loading...</label>
                     </div>
 
-                    <div class="features">
-                        <h4>Features:</h4>
-                        <ul>
-                            <li>100% Cotton mesh fabric</li>
-                            <li>Classic fit for comfort</li>
-                            <li>Machine washable</li>
+                    <div class="features" style="margin-bottom: 24px;">
+                        <h4 style="margin-bottom: 12px; color: #1e293b;">Description:</h4>
+                        <ul style="list-style: none; padding: 0;">
+                            <!-- Will be populated dynamically -->
                         </ul>
                     </div>
 
                     <div class="modal-actions">
                         <button class="add-to-cart-btn">🛍️ Add to Cart</button>
-                        <button class="visit-vendor-btn">Visit Ralph Lauren →</button>
+                        <button class="visit-vendor-btn">Visit Vendor →</button>
                     </div>
                 </div>
             </div>

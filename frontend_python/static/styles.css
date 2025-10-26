@@ -37,18 +37,26 @@ body {
 }
 
 .logo h1 {
-    font-size: 24px;
-    font-weight: 800;
-    color: white;
-    margin-bottom: 4px;
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    transform: perspective(1000px) rotateX(0deg);
+    letter-spacing: -0.5px;
+    position: relative;
 }
 
 .tagline {
-    font-size: 12px;
-    color: #94a3b8;
-    font-weight: 500;
+    font-size: 11px;
+    color: #a78bfa;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1.2px;
+    text-shadow: 0 2px 4px rgba(167, 139, 250, 0.3);
 }
 
 .new-search-btn {
@@ -91,7 +99,7 @@ body {
 
 .session-section h3,
 .quick-links-section h3 {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     color: #94a3b8;
     text-transform: uppercase;
@@ -136,13 +144,21 @@ body {
 }
 
 .search-title {
-    font-size: 13px;
+    font-size: 6px;
     font-weight: 500;
     color: white;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.search-item .search-title {
+    color: #cbd5e1;
+}
+
+.search-item.active .search-title {
+    color: white;
 }
 
 .search-meta {
@@ -205,7 +221,7 @@ body {
 
 .center-panel {
     flex: 1;
-    background: white;
+    background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 50%, #f0f9ff 100%);
     display: flex;
     flex-direction: column;
 }
@@ -236,15 +252,23 @@ body {
 }
 
 .empty-message h3 {
-    font-size: 32px;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 12px;
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
 }
 
 .empty-message p {
-    font-size: 16px;
+    font-size: 18px;
     color: #64748b;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+    font-weight: 500;
 }
 
 .chat-messages-container {
@@ -282,7 +306,7 @@ body {
 }
 
 .search-title {
-    font-size: 28px;
+    font-size: 18px;
     font-weight: 700;
     color: #1e293b;
 }
@@ -390,6 +414,12 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     border-color: #8b5cf6;
+}
+
+.product-card.highlighted {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    transform: translateY(-2px);
 }
 
 .product-image {
@@ -551,12 +581,13 @@ body {
 
 .message-input {
     flex: 1;
-    padding: 12px 16px;
+    padding: 16px 20px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-size: 14px;
     outline: none;
     transition: all 0.2s ease;
+    min-height: 52px;
 }
 
 .message-input:focus {
@@ -708,6 +739,36 @@ body {
     font-size: 13px;
     color: #64748b;
     margin-bottom: 8px;
+}
+
+.recommendations-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 16px;
+}
+
+.recommendations-loading .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #8b5cf6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.recommendations-loading p {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .quick-view-btn {
@@ -869,8 +930,7 @@ body {
 }
 
 .thumbnail-gallery {
-    display: flex;
-    gap: 8px;
+    display: none;
 }
 
 .thumbnail {

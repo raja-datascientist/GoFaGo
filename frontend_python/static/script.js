@@ -4,18 +4,48 @@ class StyleAI {
         this.currentPage = 'search';
         this.cart = this.loadCart();
         this.favorites = this.loadFavorites();
-        this.searchHistory = this.loadSearchHistory();
+        this.searchSessions = this.loadSessions();
+        this.currentSessionId = this.searchSessions.length > 0 ? this.searchSessions[this.searchSessions.length - 1].id : null;
         this.selectedProducts = new Set();
         this.currentProduct = null;
+        this.conversationHistory = []; // Track conversation
+        this.currentSearchContext = null; // Track current search context
         
         this.init();
+    }
+
+    cleanPrice(price) {
+        // Remove any existing $ symbols and whitespace, return as number
+        if (typeof price === 'number') return price;
+        if (typeof price === 'string') {
+            return parseFloat(price.replace(/[$,\s]/g, '')) || 0;
+        }
+        return 0;
+    }
+
+    formatPrice(price) {
+        // Clean and format price
+        const cleanPrice = this.cleanPrice(price);
+        return cleanPrice.toFixed(2);
     }
 
     init() {
         this.setupEventListeners();
         this.updateCartBadge();
         this.updateFavoritesBadge();
+        this.updateSearchSessions();
+        this.setupPageRefreshWarning();
         // Don't load initial products - start with empty state
+    }
+
+    setupPageRefreshWarning() {
+        window.addEventListener('beforeunload', (e) => {
+            if (this.searchSessions.length > 0) {
+                e.preventDefault();
+                e.returnValue = 'Your search sessions will be cleared. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
     }
 
     setupEventListeners() {
@@ -149,16 +179,16 @@ class StyleAI {
     }
 
     setupModalInteractions() {
-        // Thumbnail gallery
-        document.querySelectorAll('.thumbnail').forEach(thumb => {
-            thumb.addEventListener('click', () => {
-                document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-                thumb.classList.add('active');
-                // Update main image
-                const color = thumb.style.backgroundColor;
-                document.getElementById('mainImage').style.backgroundColor = color;
-            });
-        });
+        // Thumbnail gallery - removed since thumbnails are now hidden
+        // document.querySelectorAll('.thumbnail').forEach(thumb => {
+        //     thumb.addEventListener('click', () => {
+        //         document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+        //         thumb.classList.add('active');
+        //         // Update main image
+        //         const color = thumb.style.backgroundColor;
+        //         document.getElementById('mainImage').style.backgroundColor = color;
+        //     });
+        // });
 
         // Color selector
         document.querySelectorAll('.color-option').forEach(option => {
@@ -284,8 +314,7 @@ class StyleAI {
     }
 
     loadInitialProducts() {
-        const products = this.getProductData();
-        this.displayProducts(products);
+        // Don't load mock products - wait for user search
     }
 
     displayProducts(products) {
@@ -294,6 +323,9 @@ class StyleAI {
         
         // Store products for modal and recommendations
         this.productsData = products;
+        
+        // Save products to current session
+        this.saveCurrentSession();
         
         // Create product grid
         productGridContainer.innerHTML = '<div class="product-grid" id="productGrid"></div>';
@@ -323,7 +355,7 @@ class StyleAI {
         
         const productName = product.name || product.title || 'Product Name';
         const productBrand = product.brand || 'Brand';
-        const productPrice = product.price || product.current_price || '0.00';
+        const productPrice = this.formatPrice(product.price || product.current_price || '0.00');
         const matchScore = product.matchPercentage || Math.floor(Math.random() * 10) + 85;
         
         card.innerHTML = `
@@ -356,87 +388,136 @@ class StyleAI {
         
         productGrid.parentNode.insertBefore(loadingMessage, productGrid.nextSibling);
         
-        // Simulate loading delay
-        setTimeout(() => {
-            loadingMessage.remove();
-            
-            // Add more products (duplicate for demo)
-            const products = this.getProductData();
-            products.forEach(product => {
-                const productCard = this.createProductCard(product);
-                productGrid.appendChild(productCard);
-            });
-            
-            // Scroll to new products
-            productGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 1000);
+        // Don't load more products - just remove loading message
+        loadingMessage.remove();
     }
 
     openQuickView(productId) {
-        console.log('Opening quick view for product:', productId);
+        console.log('=== OPENING QUICK VIEW ===');
+        console.log('Product ID:', productId);
+        console.log('Products data:', this.productsData);
+        console.log('Number of products:', this.productsData?.length);
         
-        console.log('Current products data:', this.productsData);
+        // Remove previous highlighting
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.classList.remove('highlighted');
+        });
+        
+        // Highlight the clicked product
+        const clickedProduct = document.querySelector(`[data-product-id="${productId}"]`);
+        if (clickedProduct) {
+            clickedProduct.classList.add('highlighted');
+        }
         
         // Try to find product in displayed products first
         let product = null;
         if (this.productsData) {
+            console.log('Available product IDs:', this.productsData.map(p => ({id: p.id, product_id: p.product_id})));
             product = this.productsData.find(p => {
                 const pId = p.id || p.product_id || '';
-                console.log('Comparing:', pId, 'with', productId);
+                console.log('Comparing:', String(pId), 'with', String(productId));
                 return String(pId) === String(productId);
             });
         }
         
         if (!product) {
-            console.error('Product not found:', productId, 'Available IDs:', this.productsData?.map(p => p.id || p.product_id));
+            console.error('=== PRODUCT NOT FOUND ===');
+            console.error('Looking for:', productId);
+            console.error('Available IDs:', this.productsData?.map(p => p.id || p.product_id));
+            alert('Product not found: ' + productId);
             return;
         }
         
-        console.log('Found product:', product);
+        console.log('=== FOUND PRODUCT ===');
+        console.log('Product object:', JSON.stringify(product, null, 2));
         
         this.currentProduct = product;
         
         // Fetch recommendations for this product
         this.loadRecommendations(productId);
         
-        // Update modal content with real product data
-        const brandEl = document.querySelector('.product-brand');
-        if (brandEl) brandEl.textContent = (product.brand || 'Brand').toUpperCase();
+        // Show modal first
+        document.getElementById('quickViewModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
         
-        const nameEl = document.querySelector('.product-name');
-        if (nameEl) nameEl.textContent = product.name || product.title || 'Product Name';
+        // Update modal content with real product data - use modal-specific selectors
+        const brandEl = document.querySelector('.modal-right .product-brand');
+        // Use category as brand or first part of product name
+        const brand = product.Category || product.category || product.brand || 'Nike';
+        if (brandEl) {
+            brandEl.textContent = brand.toUpperCase();
+            console.log('Updated brand to:', brand.toUpperCase());
+        } else {
+            console.error('Brand element not found');
+        }
         
-        const priceEl = document.querySelector('.product-price');
-        if (priceEl) priceEl.textContent = `$${product.price || product.current_price || '0.00'}`;
+        const nameEl = document.querySelector('.modal-right .product-name');
+        // Use the same field as search results (product.name)
+        if (nameEl) {
+            // Search results use: product.name || product.title
+            // So modal should also use: product.name || product.title
+            const productName = product.name || product.title || product.description || product.Category || 'Unknown Product';
+            console.log('=== MODAL PRODUCT DATA ===');
+            console.log('Full product object:', product);
+            console.log('product.name:', product.name);
+            console.log('product.description:', product.description);
+            console.log('product.Category:', product.Category);
+            console.log('Final productName:', productName);
+            nameEl.textContent = productName;
+            console.log('Updated product name to:', productName);
+        } else {
+            console.error('Product name element not found in modal');
+        }
+        
+        const priceEl = document.querySelector('.modal-right .product-price');
+        const rawPrice = product.price || product.current_price;
+        console.log('Raw price value:', rawPrice);
+        if (priceEl) {
+            const cleanPrice = this.formatPrice(rawPrice);
+            console.log('Cleaned price:', cleanPrice);
+            priceEl.textContent = `$${cleanPrice}`;
+            console.log('Updated price to: $' + cleanPrice);
+        } else {
+            console.error('Price element not found in modal');
+        }
         
         const vendorUrl = document.querySelector('.vendor-url');
         if (vendorUrl) {
-            const vendor = product.brand || 'vendor.com';
+            const vendor = 'nike.com';
             vendorUrl.textContent = `🔗 ${vendor}`;
-            vendorUrl.href = product.product_url || product.productUrl || '#';
+            vendorUrl.href = product.product_url || product.product_page_url || '#';
         }
         
         // Update image if available
         const mainImage = document.getElementById('mainImage');
-        if (mainImage && product.image_url) {
-            mainImage.style.backgroundImage = `url(${product.image_url})`;
+        const imageUrl = product.image_url || product.Image_Url || product.imageUrl || product.image_urls;
+        if (mainImage && imageUrl) {
+            mainImage.style.backgroundImage = `url(${imageUrl})`;
             mainImage.style.backgroundSize = 'cover';
             mainImage.style.backgroundPosition = 'center';
+        } else {
+            // Use color fallback
+            mainImage.style.backgroundColor = product.imageColor || '#d9e8ff';
         }
         
-        // Update features
-        const featuresList = document.querySelector('.features ul');
+        // Update features - show full detailed description
+        const featuresContainer = document.querySelector('.features');
+        if (featuresContainer) {
+            const description = product.detailed_description || product.Detailed_description || product.productcard_messaging || '';
+            const featuresList = featuresContainer.querySelector('ul');
         if (featuresList) {
             featuresList.innerHTML = '';
-            // Create features from product data
-            const description = product.detailed_description || product.description || '';
             if (description) {
-                const features = description.split('.').slice(0, 3).filter(f => f.trim());
-                features.forEach(feature => {
+                    // Show the full detailed description as a single feature
                     const li = document.createElement('li');
-                    li.textContent = feature.trim() + '.';
+                    li.style.cssText = 'margin-bottom: 8px; line-height: 1.6;';
+                    li.textContent = description;
                     featuresList.appendChild(li);
-                });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = 'No description available.';
+                    featuresList.appendChild(li);
+                }
             }
         }
         
@@ -447,30 +528,128 @@ class StyleAI {
             matchBadge.textContent = matchPercentage;
         }
         
-        // Show modal
-        document.getElementById('quickViewModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
+        // Update ratings (from product data if available, otherwise use defaults)
+        const ratingStars = document.querySelector('.product-rating .stars');
+        const ratingText = document.querySelector('.product-rating .rating-text');
+        if (ratingStars) {
+            const rating = product.rating || 4.5;
+            const stars = Math.round(rating);
+            ratingStars.textContent = '★★★★☆'.slice(0, stars) + '☆'.repeat(5 - stars);
+        }
+        if (ratingText && product.reviews) {
+            ratingText.textContent = `${product.rating || 4.5} (${product.reviews})`;
+        }
+        
+        // Update colors from product data
+        const colorLabel = document.querySelector('.color-selector label');
+        if (colorLabel) {
+            const colors = product.Colors_Available || product.colors_available || product.Colors || product.colors || 'Various colors';
+            colorLabel.textContent = `Available Colors: ${colors}`;
+        }
+        // Hide color options tiles below image
+        const colorOptions = document.querySelector('.color-options');
+        if (colorOptions) {
+            colorOptions.innerHTML = ''; // Clear hardcoded color tiles
+        }
+        
+        // Update sizes from product data
+        const sizeLabel = document.querySelector('.size-selector label');
+        const sizeOptions = document.querySelector('.size-options');
+        if (sizeLabel) {
+            const sizes = product.Sizes || product.sizes || '';
+            if (sizes) {
+                sizeLabel.textContent = `Available Sizes: ${sizes}`;
+            } else {
+                sizeLabel.textContent = 'Available Sizes: Various';
+            }
+        }
+        if (sizeOptions) {
+            sizeOptions.innerHTML = '';
+            // Remove hardcoded sizes
+        }
+        
+        // Update visit vendor button
+        const visitBtn = document.querySelector('.visit-vendor-btn');
+        if (visitBtn) {
+            visitBtn.textContent = `Visit ${brand} →`;
+            visitBtn.addEventListener('click', () => {
+                window.open(product.product_url || product.product_page_url || product.url || product.product_link || product.productUrl || '#', '_blank');
+            });
+        }
+        
+        // Modal is already shown above
     }
 
     async loadRecommendations(productId) {
+        // Show loading state
+        this.showRecommendationsLoading();
+        
         // Load recommendations from backend
         try {
+            // Find the product object from current product or productsData
+            let product = this.currentProduct;
+            if (!product && this.productsData) {
+                product = this.productsData.find(p => {
+                    const pId = p.id || p.product_id || '';
+                    return String(pId) === String(productId);
+                });
+            }
+            
+            if (!product) {
+                console.error('Product not found for recommendations:', productId);
+                this.hideRecommendationsLoading();
+                return;
+            }
+            
+            console.log('Loading recommendations for product:', product);
+            console.log('Search context:', this.currentSearchContext);
+            
             const response = await fetch('/api/recommendations', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ productId: productId })
+                body: JSON.stringify({ 
+                    product: product,
+                    searchContext: this.currentSearchContext
+                })
             });
             
             const data = await response.json();
             
-            if (data.products && data.products.length > 0) {
-                this.displayRecommendations(data.products);
+            if (data.recommendations && data.recommendations.length > 0) {
+                this.displayRecommendations(data.recommendations);
+            } else {
+                console.log('No recommendations found');
+                this.displayNoRecommendations();
             }
         } catch (error) {
             console.error('Error loading recommendations:', error);
+            this.displayNoRecommendations();
         }
+    }
+
+    showRecommendationsLoading() {
+        const lookItemsContainer = document.getElementById('lookItems');
+        if (!lookItemsContainer) return;
+        
+        lookItemsContainer.innerHTML = `
+            <div class="recommendations-loading">
+                <div class="loading-spinner"></div>
+                <p>Matching items for you...</p>
+            </div>
+        `;
+    }
+
+    hideRecommendationsLoading() {
+        // This is handled by displayRecommendations
+    }
+
+    displayNoRecommendations() {
+        const lookItemsContainer = document.getElementById('lookItems');
+        if (!lookItemsContainer) return;
+        
+        lookItemsContainer.innerHTML = '<p style="color: #64748b; font-size: 14px; text-align: center; padding: 20px;">No recommendations available at this time.</p>';
     }
 
     displayRecommendations(products) {
@@ -516,29 +695,50 @@ class StyleAI {
         document.getElementById('quickViewModal').classList.remove('active');
         document.body.style.overflow = '';
         this.currentProduct = null;
+        
+        // Remove highlighting from product cards
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.classList.remove('highlighted');
+        });
     }
 
     addToCart(productId) {
-        const products = this.getProductData();
-        const product = products.find(p => p.id === productId);
+        // First try to find in current products data (from search results)
+        let product = null;
+        if (this.productsData) {
+            product = this.productsData.find(p => {
+                const pId = p.id || p.product_id || '';
+                return String(pId) === String(productId);
+            });
+        }
         
-        if (!product) return;
+        if (!product) {
+            this.showToast('Product not found');
+            return;
+        }
+        
+        // Get all available product fields from the actual data
+        const rawPrice = product.price || product.current_price || product.list_price || '0.00';
+        const cleanPrice = this.formatPrice(rawPrice);
         
         const cartItem = {
-            id: product.id,
-            brand: product.brand,
-            name: product.name,
-            price: product.price,
-            vendor: product.vendor,
-            vendorUrl: product.vendorUrl,
-            imageColor: product.imageColor,
-            color: product.color,
-            size: product.size,
+            id: product.id || product.product_id || Date.now().toString(),
+            brand: product.brand || '',
+            name: product.name || product.title || product.product_name || 'Product',
+            price: cleanPrice,
+            vendor: product.vendor || product.brand || product.manufacturer || 'Vendor',
+            vendorUrl: product.vendorUrl || product.product_url || product.url || product.product_link || '#',
+            imageColor: product.imageColor || product.color || '#d9e8ff',
+            image_url: product.image_url || product.image_urls || product.imageUrl || '',
+            color: product.color || product.colors || '',
+            size: product.size || '',
+            category: product.category || product.product_category || '',
+            description: product.description || product.detailed_description || '',
             addedAt: Date.now()
         };
         
         // Check if item already exists
-        const existingIndex = this.cart.findIndex(item => item.id === productId);
+        const existingIndex = this.cart.findIndex(item => item.id === cartItem.id);
         if (existingIndex === -1) {
             this.cart.push(cartItem);
             this.saveCart();
@@ -613,12 +813,180 @@ class StyleAI {
             default:
                 this.showSearchPage();
         }
+        
+        // Show chat input for non-cart pages
+        const messageInputContainer = document.querySelector('.message-input-container');
+        if (messageInputContainer && page !== 'cart') {
+            messageInputContainer.style.display = 'flex';
+        }
     }
 
     showCartPage() {
-        // This would show the shopping cart page
-        // For now, just show a message
-        this.showToast('Shopping Cart page would load here');
+        const chatMessages = document.getElementById('chatMessages');
+        const productGridContainer = document.getElementById('productGridContainer');
+        const messageInputContainer = document.querySelector('.message-input-container');
+        
+        // Hide empty state
+        document.getElementById('emptyState').style.display = 'none';
+        
+        // Hide chat input
+        if (messageInputContainer) {
+            messageInputContainer.style.display = 'none';
+        }
+        
+        // Clear previous content
+        chatMessages.style.display = 'none';
+        productGridContainer.innerHTML = '';
+        
+        if (this.cart.length === 0) {
+            productGridContainer.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; grid-column: 1 / -1;">
+                    <h3 style="color: #64748b; margin-bottom: 16px;">Your cart is empty</h3>
+                    <p style="color: #94a3b8;">Add items to your cart to continue shopping</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Calculate total
+        const total = this.cart.reduce((sum, item) => sum + this.cleanPrice(item.price), 0);
+        
+        // Display cart view with header and list
+        productGridContainer.innerHTML = `
+            <div id="cartView" style="display: flex; flex-direction: column; height: 100%; position: relative;">
+                <div style="flex: 1; overflow-y: auto; padding-right: 8px; padding-bottom: 20px;">
+                    <div class="cart-header">
+                        <div>
+                            <p style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Session Cart</p>
+                            <h2 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">Shopping Cart (${this.cart.length})</h2>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="selectAllCart" style="width: 18px; height: 18px;">
+                            <span style="color: #475569; font-weight: 500;">Select All (${this.cart.length})</span>
+                        </label>
+                    </div>
+                    
+                    <div style="background: #fef3c7; border: 1px solid #fde047; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; color: #92400e;">
+                            <span style="font-size: 18px;">▲</span>
+                            <span style="font-weight: 500;">Cart expires when browser closes</span>
+                        </div>
+                        <p style="color: #a16207; margin: 4px 0 0 26px; font-size: 13px;">Items saved in this session only</p>
+                    </div>
+                    
+                    <div style="background: #dcfce7; border: 1px solid #86efac; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #166534; font-weight: 600;">${this.cart.length} items selected</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="styleAI.openAllCartItems()" style="background: #22c55e; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Open All (${this.cart.length} tabs)</button>
+                            <button onclick="styleAI.removeSelectedItems()" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Remove</button>
+                        </div>
+                    </div>
+                    
+                    <div id="cartItemsList" style="display: flex; flex-direction: column; gap: 16px;"></div>
+                </div>
+                
+                <div style="flex-shrink: 0; background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 50%, #f0f9ff 100%); padding: 24px 0; border-top: 2px solid #e2e8f0; position: sticky; bottom: 0;">
+                    <p style="text-align: center; color: #64748b; margin-bottom: 16px;">
+                        Total estimated: <strong style="color: #1e293b; font-size: 18px;">$${total.toFixed(2)}</strong> (from ${this.cart.length} vendor${this.cart.length > 1 ? 's' : ''})
+                    </p>
+                    <button onclick="styleAI.openAllCartItems()" style="width: 100%; background: #8b5cf6; color: white; padding: 16px; border: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer;">Open All ${this.cart.length} Items in separate tabs</button>
+                </div>
+            </div>
+        `;
+        
+        const cartItemsList = document.getElementById('cartItemsList');
+        
+        // Display cart items as list
+        this.cart.forEach((item) => {
+            const addedTime = this.getTimeAgo(item.addedAt);
+            const itemTotal = parseFloat(item.price || 0);
+            
+            const cartItem = document.createElement('div');
+            cartItem.style.cssText = 'border: 2px solid #8b5cf6; border-radius: 12px; padding: 16px; background: white;';
+            
+            const imageUrl = item.image_url || item.imageUrl || '';
+            const imageColor = item.imageColor || '#d9e8ff';
+            
+            cartItem.innerHTML = `
+                <div style="display: flex; gap: 16px; align-items: start;">
+                    <input type="checkbox" class="cart-item-checkbox" style="width: 20px; height: 20px; margin-top: 4px;">
+                    <div class="cart-item-image" style="width: 80px; height: 80px; min-width: 80px; border-radius: 8px; background-color: ${imageColor}; ${imageUrl ? `background-image: url(${imageUrl}); background-size: cover; background-position: center;` : ''}"></div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <div>
+                                <div style="font-size: 15px; color: #475569; margin-bottom: 2px; font-weight: 500;">${item.name}</div>
+                                <div style="font-size: 12px; color: #64748b;">${item.vendor || item.brand || 'Vendor'}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 700; font-size: 18px; color: #1e293b;">$${this.formatPrice(item.price)}</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Added ${addedTime}</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="styleAI.openCartItem('${item.vendorUrl}')" style="background: #8b5cf6; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Open Link →</button>
+                            <button onclick="styleAI.removeFromCart('${item.id}')" style="background: #ef4444; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 18px;">×</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            cartItemsList.appendChild(cartItem);
+        });
+        
+        // Select all checkbox
+        const selectAllCheckbox = document.getElementById('selectAllCart');
+        selectAllCheckbox.addEventListener('change', (e) => {
+            document.querySelectorAll('.cart-item-checkbox').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+        });
+    }
+    
+    openCartItem(url) {
+        if (url && url !== '#') {
+            window.open(url, '_blank');
+        }
+    }
+    
+    openAllCartItems() {
+        this.cart.forEach(item => {
+            if (item.vendorUrl && item.vendorUrl !== '#') {
+                window.open(item.vendorUrl, '_blank');
+            }
+        });
+        this.showToast(`Opening ${this.cart.length} items in new tabs`);
+    }
+    
+    removeSelectedItems() {
+        const checkboxes = document.querySelectorAll('.cart-item-checkbox');
+        let removed = 0;
+        
+        checkboxes.forEach((cb, index) => {
+            if (cb.checked) {
+                this.cart.splice(index - removed, 1);
+                removed++;
+            }
+        });
+        
+        if (removed > 0) {
+            this.saveCart();
+            this.updateCartBadge();
+            this.showCartPage();
+            this.showToast(`Removed ${removed} item${removed > 1 ? 's' : ''} from cart`);
+        } else {
+            this.showToast('No items selected');
+        }
+    }
+
+    removeFromCart(productId) {
+        const index = this.cart.findIndex(item => item.id === productId);
+        if (index !== -1) {
+            this.cart.splice(index, 1);
+            this.saveCart();
+            this.updateCartBadge();
+            this.showCartPage(); // Refresh cart view
+            this.showToast('Removed from cart');
+        }
     }
 
     showFavoritesPage() {
@@ -638,36 +1006,86 @@ class StyleAI {
     }
 
     showSearchPage() {
-        this.showToast('Search page loaded');
+        const messageInputContainer = document.querySelector('.message-input-container');
+        if (messageInputContainer) {
+            messageInputContainer.style.display = 'flex';
+        }
+        // Don't clear the current session's content - just enable chat
     }
 
     applyFilter(filter) {
+        // Refine existing search results
+        if (!this.productsData || this.productsData.length === 0) {
+            this.showToast('No search results to refine. Please search first.');
+            return;
+        }
+        
+        // Create filter text mapping
+        const filterTexts = {
+            'under-50': 'Under $50',
+            'premium': 'Premium Brands',
+            'sale': 'Sale Items',
+            'sustainable': 'Sustainable'
+        };
+        
+        const filterText = filterTexts[filter] || filter;
+        
         // Add filter chip
         const filterChips = document.querySelector('.filter-chips');
-        const chip = document.createElement('div');
-        chip.className = 'filter-chip';
-        chip.innerHTML = `
-            ${filter.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-            <button class="remove-filter">×</button>
-        `;
+        if (filterChips) {
+            const chip = document.createElement('div');
+            chip.className = 'filter-chip';
+            chip.innerHTML = `
+                ${filterText}
+                <button class="remove-filter">×</button>
+            `;
+            
+            // Add remove functionality
+            chip.querySelector('.remove-filter').addEventListener('click', (e) => {
+                e.stopPropagation();
+                chip.remove();
+            });
+            
+            filterChips.appendChild(chip);
+        }
         
-        // Add remove functionality
-        chip.querySelector('.remove-filter').addEventListener('click', (e) => {
-            e.stopPropagation();
-            chip.remove();
-        });
+        // Filter products based on the refinement
+        let filteredProducts = [...this.productsData];
         
-        filterChips.appendChild(chip);
+        if (filter === 'under-50') {
+            filteredProducts = filteredProducts.filter(p => {
+                const price = this.cleanPrice(p.price || p.current_price);
+                return price < 50;
+            });
+        } else if (filter === 'premium') {
+            filteredProducts = filteredProducts.filter(p => {
+                const price = this.cleanPrice(p.price || p.current_price);
+                return price >= 100;
+            });
+        } else if (filter === 'sale') {
+            filteredProducts = filteredProducts.filter(p => {
+                const listPrice = this.cleanPrice(p.list_price || p.list_price);
+                const currentPrice = this.cleanPrice(p.price || p.current_price);
+                return listPrice > currentPrice;
+            });
+        }
         
-        this.showToast(`Filter applied: ${filter}`);
+        if (filteredProducts.length > 0) {
+            this.displayProducts(filteredProducts);
+            this.showToast(`Filtered to ${filteredProducts.length} results`);
+        } else {
+            this.showToast('No products match this filter');
+        }
     }
 
-    performSearch(query) {
-        document.querySelector('.search-title').textContent = query;
-        this.showToast(`Searching for: ${query}`);
-        
-        // Add to search history
-        this.addToSearchHistory(query);
+    async performSearch(query) {
+        // Set the search text in the input field and trigger search
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+            messageInput.value = query;
+            // Trigger the sendMessage method to perform the search
+            await this.sendMessage();
+        }
     }
 
     addToSearchHistory(query) {
@@ -745,10 +1163,31 @@ class StyleAI {
             return;
         }
         
+        // Create session if this is the first search
+        if (!this.currentSessionId) {
+            const newSession = {
+                id: Date.now().toString(),
+                title: message.length > 30 ? message.substring(0, 30) + '...' : message,
+                timestamp: Date.now(),
+                conversationHistory: [],
+                products: [],
+                searchContext: null
+            };
+            this.searchSessions.push(newSession);
+            this.currentSessionId = newSession.id;
+            this.updateSearchSessions();
+        }
+        
         // Hide empty state and show chat messages
         document.getElementById('emptyState').style.display = 'none';
         document.getElementById('chatMessages').style.display = 'flex';
         document.getElementById('chatMessages').style.flexDirection = 'column';
+        
+        // Clear filter chips for new search
+        const filterChips = document.querySelector('.filter-chips');
+        if (filterChips) {
+            filterChips.innerHTML = '';
+        }
         
         const chatMessages = document.getElementById('chatMessages');
         
@@ -757,6 +1196,12 @@ class StyleAI {
         userMessage.className = 'user-message';
         userMessage.textContent = message;
         chatMessages.appendChild(userMessage);
+        
+        // Add user message to conversation history
+        this.conversationHistory.push({
+            role: 'user',
+            content: message
+        });
         
         // Clear input
         input.value = '';
@@ -769,16 +1214,21 @@ class StyleAI {
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
         try {
-            // Send message to backend
+            // Send message to backend with conversation history
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ message: message })
+                body: JSON.stringify({ 
+                    message: message,
+                    conversationHistory: this.conversationHistory
+                })
             });
             
             const data = await response.json();
+            console.log('Server response:', data);
+            console.log('Products count:', data.products ? data.products.length : 0);
             
             // Remove loading message
             loadingMessage.remove();
@@ -789,13 +1239,58 @@ class StyleAI {
             aiResponse.textContent = data.message || `I found results for "${message}"! Here are the top picks:`;
             chatMessages.appendChild(aiResponse);
             
+            // Add AI response to conversation history
+            this.conversationHistory.push({
+                role: 'assistant',
+                content: data.message || `I found results for "${message}"! Here are the top picks:`
+            });
+            
+            // Limit conversation history to last 20 messages to avoid context window issues
+            if (this.conversationHistory.length > 20) {
+                this.conversationHistory = this.conversationHistory.slice(-20);
+            }
+            
+            // Store search context for recommendations
+            this.currentSearchContext = {
+                userMessage: message,
+                filtersApplied: {} // Can be extended with filters later
+            };
+            
+            // Extract price constraints from user message if any
+            const priceMatch = message.match(/(?:under|below|less than|<)\s*\$?(\d+)/i);
+            if (priceMatch) {
+                this.currentSearchContext.filtersApplied.max_price = parseFloat(priceMatch[1]);
+            }
+            
+            const minPriceMatch = message.match(/(?:above|over|more than|>)\s*\$?(\d+)/i);
+            if (minPriceMatch) {
+                this.currentSearchContext.filtersApplied.min_price = parseFloat(minPriceMatch[1]);
+            }
+            
             // Load products if available
+            console.log('Checking products...');
             if (data.products && data.products.length > 0) {
+                console.log('Displaying products from server');
                 this.displayProducts(data.products);
+            } else {
+                console.log('No products in response');
             }
             
             // Update header with search title
             document.querySelector('.search-title').textContent = message;
+            
+            // Update session with title and save
+            if (this.currentSessionId) {
+                const session = this.searchSessions.find(s => s.id === this.currentSessionId);
+                if (session) {
+                    // Set title from first search if not set
+                    if (session.title === 'New Search') {
+                        session.title = message.length > 30 ? message.substring(0, 30) + '...' : message;
+                    }
+                    this.saveCurrentSession();
+                    this.updateSearchSessions();
+                }
+            }
             
         } catch (error) {
             console.error('Error sending message:', error);
@@ -803,20 +1298,199 @@ class StyleAI {
             
             const errorMessage = document.createElement('div');
             errorMessage.className = 'ai-message';
-            errorMessage.innerHTML = `<p>I found results for "${message}"! Here are the top picks:</p>`;
+            const errorText = `<p>I encountered an error. Please try again.</p>`;
+            errorMessage.innerHTML = errorText;
             chatMessages.appendChild(errorMessage);
             
-            // Fallback to mock data if backend fails
-            this.displayProducts(this.getProductData());
-            document.querySelector('.search-title').textContent = message;
+            // Add error message to conversation history
+            this.conversationHistory.push({
+                role: 'assistant',
+                content: errorText
+            });
+            
+            // Limit conversation history to last 20 messages
+            if (this.conversationHistory.length > 20) {
+                this.conversationHistory = this.conversationHistory.slice(-20);
+            }
         }
         
+
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     startNewSearch() {
+        // Create new session
+        const newSession = {
+            id: Date.now().toString(),
+            title: 'New Search',
+            timestamp: Date.now(),
+            conversationHistory: [],
+            products: [],
+            searchContext: null
+        };
+        
+        this.searchSessions.push(newSession);
+        this.currentSessionId = newSession.id;
+        this.conversationHistory = [];
+        this.currentSearchContext = null;
+        this.productsData = null;
+        
+        // Clear UI
+        document.getElementById('emptyState').style.display = 'flex';
+        document.getElementById('chatMessages').style.display = 'none';
+        document.getElementById('chatMessages').innerHTML = '';
+        document.getElementById('productGridContainer').innerHTML = '';
+        document.getElementById('lookItems').innerHTML = '';
+        
+        // Update sessions display
+        this.updateSearchSessions();
+        
+        // Focus input
         document.getElementById('messageInput').focus();
-        this.showToast('Start typing your search...');
+        this.showToast('New search session started');
+    }
+
+    loadSessions() {
+        try {
+            const sessions = localStorage.getItem('styleai_search_sessions');
+            return sessions ? JSON.parse(sessions) : [];
+        } catch (error) {
+            console.error('Error loading sessions:', error);
+            return [];
+        }
+    }
+
+    saveSessions() {
+        try {
+            localStorage.setItem('styleai_search_sessions', JSON.stringify(this.searchSessions));
+        } catch (error) {
+            console.error('Error saving sessions:', error);
+        }
+    }
+
+    updateSearchSessions() {
+        const sessionContainer = document.querySelector('.search-history');
+        if (!sessionContainer) return;
+        
+        sessionContainer.innerHTML = '';
+        
+        // Display last 5 sessions
+        const displaySessions = this.searchSessions.slice(-5).reverse();
+        
+        displaySessions.forEach((session, index) => {
+            const sessionItem = document.createElement('div');
+            sessionItem.className = `search-item ${session.id === this.currentSessionId ? 'active' : ''}`;
+            sessionItem.dataset.sessionId = session.id;
+            
+            const title = session.title || 'New Search';
+            const timeAgo = this.getTimeAgo(session.timestamp);
+            
+            sessionItem.innerHTML = `
+                <div class="search-thumbnail" style="background-color: ${this.getRandomColor()}"></div>
+                <div class="search-info" style="flex: 1;">
+                    <div class="search-title">${title.length > 15 ? title.substring(0, 15) + '...' : title}</div>
+                    <div class="search-meta">${timeAgo}</div>
+                </div>
+                <button class="delete-session-btn" data-session-id="${session.id}" style="background: transparent; border: none; color: #64748b; font-size: 16px; padding: 4px 8px; cursor: pointer; border-radius: 4px;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='#64748b';">×</button>
+            `;
+            
+            sessionItem.addEventListener('click', (e) => {
+                // Don't switch if clicking the delete button
+                if (!e.target.classList.contains('delete-session-btn')) {
+                    this.switchSession(session.id);
+                }
+            });
+            
+            // Add delete button event listener
+            const deleteBtn = sessionItem.querySelector('.delete-session-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteSession(session.id);
+            });
+            
+            sessionContainer.appendChild(sessionItem);
+        });
+    }
+
+    switchSession(sessionId) {
+        const session = this.searchSessions.find(s => s.id === sessionId);
+        if (!session) return;
+        
+        this.currentSessionId = sessionId;
+        this.conversationHistory = session.conversationHistory || [];
+        this.currentSearchContext = session.searchContext;
+        this.productsData = session.products || null;
+        
+        // Show chat input
+        const messageInputContainer = document.querySelector('.message-input-container');
+        if (messageInputContainer) {
+            messageInputContainer.style.display = 'flex';
+        }
+        
+        // Clear product grid
+        document.getElementById('productGridContainer').innerHTML = '';
+        
+        // Restore UI
+        if (session.products && session.products.length > 0) {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('chatMessages').style.display = 'flex';
+            this.displayProducts(session.products);
+        } else {
+            document.getElementById('emptyState').style.display = 'flex';
+            document.getElementById('chatMessages').style.display = 'none';
+        }
+        
+        // Update header if there's a search
+        if (session.title && session.title !== 'New Search') {
+            const searchTitleEl = document.querySelector('.search-title');
+            if (searchTitleEl) {
+                searchTitleEl.textContent = session.title;
+            }
+        }
+        
+        this.updateSearchSessions();
+    }
+
+    saveCurrentSession() {
+        if (!this.currentSessionId) return;
+        
+        const session = this.searchSessions.find(s => s.id === this.currentSessionId);
+        if (session) {
+            session.conversationHistory = this.conversationHistory;
+            session.searchContext = this.currentSearchContext;
+            session.products = this.productsData;
+            this.saveSessions();
+        }
+    }
+
+    deleteSession(sessionId) {
+        if (confirm('Are you sure you want to delete this session?')) {
+            // Remove from array
+            this.searchSessions = this.searchSessions.filter(s => s.id !== sessionId);
+            this.saveSessions();
+            
+            // If we deleted the current session, switch to another one or clear
+            if (this.currentSessionId === sessionId) {
+                if (this.searchSessions.length > 0) {
+                    // Switch to the last session
+                    this.switchSession(this.searchSessions[this.searchSessions.length - 1].id);
+                } else {
+                    // No sessions left, clear everything
+                    this.currentSessionId = null;
+                    this.conversationHistory = [];
+                    this.currentSearchContext = null;
+                    this.productsData = null;
+                    
+                    document.getElementById('emptyState').style.display = 'flex';
+                    document.getElementById('chatMessages').style.display = 'none';
+                    document.getElementById('chatMessages').innerHTML = '';
+                    document.getElementById('productGridContainer').innerHTML = '';
+                }
+            }
+            
+            this.updateSearchSessions();
+            this.showToast('Session deleted');
+        }
     }
 
     updateCartBadge() {

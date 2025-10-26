@@ -246,20 +246,35 @@ async def filter_products(
                     return ""
                 return str(value)
             
+            # Get brand from productcard_messaging or use first part of Category.1
+            category_name = safe_str(row['Category.1'])
+            brand = 'Nike'  # Default brand
+            
             product = {
                 "id": safe_str(row['ProductID']),  # Use ProductID from CSV
                 "name": safe_str(row['Category']),  # Product brand/name
-                "description": safe_str(row['Category.1']),  # Product description
+                "brand": brand,  # Brand name
+                "description": category_name,  # Product description
                 "detailed_description": safe_str(row['Detailed description']),
                 "price": safe_str(row['Current Price']),
+                "current_price": safe_str(row['Current Price']),  # Alias for price
                 "original_price": safe_str(row['Original Price']),
                 "image_url": safe_str(row['Image Url']),
+                "Image_Url": safe_str(row['Image Url']),  # Alias with different casing
                 "product_url": safe_str(row['Product page url']),
+                "product_page_url": safe_str(row['Product page url']),  # Alias
                 "sizes": safe_str(row['Sizes']),
+                "Sizes": safe_str(row['Sizes']),  # Alias with different casing
                 "colors": safe_str(row['Colors']),
+                "Colors": safe_str(row['Colors']),  # Alias with different casing
+                "colors_available": safe_str(row.get('Colors Available', '') if 'Colors Available' in row.index else ''),  # New field
+                "Colors_Available": safe_str(row.get('Colors Available', '') if 'Colors Available' in row.index else ''),  # Alias
                 "messaging": safe_str(row['productcard_messaging']),
+                "productcard_messaging": safe_str(row['productcard_messaging']),
                 "offer_percent": safe_str(row['Offer %']),
-                "gender": safe_str(row['Gender'])
+                "gender": safe_str(row['Gender']),
+                "category": safe_str(row['Category']),  # Category field
+                "Category": safe_str(row['Category'])  # Alias with different casing
             }
             products.append(product)
         

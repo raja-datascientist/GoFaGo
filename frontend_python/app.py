@@ -211,7 +211,7 @@ Always be encouraging, helpful, and focus on helping the customer find exactly w
         
         # Add conversation history if provided
         if conversation_history:
-            for msg in conversation_history[-6:]:  # Keep last 6 messages for context
+            for msg in conversation_history[-20:]:  # Keep last 20 messages for context
                 messages.append({
                     "role": msg.get("role", "user"),
                     "content": msg.get("content", "")
