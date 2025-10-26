@@ -260,8 +260,8 @@ class StyleAI {
         
         productGrid.innerHTML = '';
         
-        products.forEach(product => {
-            const productCard = this.createProductCard(product);
+        products.forEach((product, index) => {
+            const productCard = this.createProductCard(product, index);
             productGrid.appendChild(productCard);
         });
         
@@ -269,28 +269,36 @@ class StyleAI {
         productGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    createProductCard(product) {
+    createProductCard(product, index = 0) {
         const card = document.createElement('div');
+        const productId = product.product_id || product.id || `product_${index}`;
         card.className = 'product-card';
-        card.dataset.productId = product.id;
+        card.dataset.productId = productId;
         
-        const colorClass = product.imageColor || 'blue';
+        // Use image URL if available, otherwise use color class as fallback
+        const imageUrl = product.image_url || product.imageUrl || '';
+        const colorClass = product.imageColor || ['blue', 'green', 'pink', 'yellow', 'purple', 'gray'][index % 6];
+        
+        const productName = product.name || product.title || 'Product Name';
+        const productBrand = product.brand || 'Brand';
+        const productPrice = product.price || product.current_price || '0.00';
+        const matchScore = product.matchPercentage || Math.floor(Math.random() * 10) + 85;
         
         card.innerHTML = `
-            <div class="product-image ${colorClass}">
-                <button class="favorite-btn" onclick="styleAI.toggleFavorite('${product.id}')">♡</button>
+            <div class="product-image ${colorClass}" ${imageUrl ? `style="background-image: url(${imageUrl}); background-size: cover; background-position: center;"` : ''}>
+                <button class="favorite-btn" onclick="styleAI.toggleFavorite('${productId}')">♡</button>
                 <div class="match-badge">
-                    <span class="match-percentage">${product.matchPercentage || 90}</span>
+                    <span class="match-percentage">${matchScore}</span>
                     <span class="match-text">match</span>
                 </div>
             </div>
             <div class="product-info">
-                <div class="product-brand">${product.brand || 'Brand'}</div>
-                <div class="product-name">${product.name || product.title || 'Product Name'}</div>
-                <div class="product-price">$${product.price || '0.00'}</div>
+                <div class="product-brand">${productBrand}</div>
+                <div class="product-name">${productName}</div>
+                <div class="product-price">$${productPrice}</div>
                 <div class="product-actions">
-                    <button class="action-btn view-btn-action" onclick="styleAI.openQuickView('${product.id}')">👁️ View</button>
-                    <button class="action-btn add-btn-action" onclick="styleAI.addToCart('${product.id}')">🛍️ Add</button>
+                    <button class="action-btn view-btn-action" onclick="styleAI.openQuickView('${productId}')">👁️ View</button>
+                    <button class="action-btn add-btn-action" onclick="styleAI.addToCart('${productId}')">🛍️ Add</button>
                 </div>
             </div>
         `;
@@ -328,13 +336,10 @@ class StyleAI {
         // Try to find product in displayed products first
         let product = null;
         if (this.productsData) {
-            product = this.productsData.find(p => p.id === productId);
-        }
-        
-        // Fallback to mock data if not found
-        if (!product) {
-            const products = this.getProductData();
-            product = products.find(p => p.id === productId);
+            product = this.productsData.find(p => {
+                const pId = p.product_id || p.id || '';
+                return pId === productId;
+            });
         }
         
         if (!product) {
@@ -347,40 +352,52 @@ class StyleAI {
         // Fetch recommendations for this product
         this.loadRecommendations(productId);
         
-        // Update modal content
-        document.querySelector('.product-brand').textContent = (product.brand || 'Brand').toUpperCase();
-        document.querySelector('.product-name').textContent = product.name || product.title || 'Product Name';
-        document.querySelector('.product-price').textContent = `$${product.price || '0.00'}`;
+        // Update modal content with real product data
+        const brandEl = document.querySelector('.product-brand');
+        if (brandEl) brandEl.textContent = (product.brand || 'Brand').toUpperCase();
+        
+        const nameEl = document.querySelector('.product-name');
+        if (nameEl) nameEl.textContent = product.name || product.title || 'Product Name';
+        
+        const priceEl = document.querySelector('.product-price');
+        if (priceEl) priceEl.textContent = `$${product.price || product.current_price || '0.00'}`;
         
         const vendorUrl = document.querySelector('.vendor-url');
         if (vendorUrl) {
-            vendorUrl.textContent = `🔗 ${product.vendor || 'vendor.com'}`;
-            vendorUrl.href = product.vendorUrl || '#';
+            const vendor = product.brand || 'vendor.com';
+            vendorUrl.textContent = `🔗 ${vendor}`;
+            vendorUrl.href = product.product_url || product.productUrl || '#';
         }
         
-        // Update rating if exists
-        const rating = product.rating || 4.5;
-        const reviews = product.reviews || '1.2k';
-        if (document.querySelector('.stars')) {
-            document.querySelector('.stars').textContent = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
-            document.querySelector('.rating-text').textContent = `${rating} (${reviews} reviews)`;
+        // Update image if available
+        const mainImage = document.getElementById('mainImage');
+        if (mainImage && product.image_url) {
+            mainImage.style.backgroundImage = `url(${product.image_url})`;
+            mainImage.style.backgroundSize = 'cover';
+            mainImage.style.backgroundPosition = 'center';
         }
         
         // Update features
         const featuresList = document.querySelector('.features ul');
-        if (featuresList && product.features) {
+        if (featuresList) {
             featuresList.innerHTML = '';
-            product.features.forEach(feature => {
-                const li = document.createElement('li');
-                li.textContent = feature;
-                featuresList.appendChild(li);
-            });
+            // Create features from product data
+            const description = product.detailed_description || product.description || '';
+            if (description) {
+                const features = description.split('.').slice(0, 3).filter(f => f.trim());
+                features.forEach(feature => {
+                    const li = document.createElement('li');
+                    li.textContent = feature.trim() + '.';
+                    featuresList.appendChild(li);
+                });
+            }
         }
         
         // Update match badge
-        const matchPercentage = product.matchPercentage || 90;
-        if (document.querySelector('.modal-left .match-percentage')) {
-            document.querySelector('.modal-left .match-percentage').textContent = matchPercentage;
+        const matchPercentage = Math.floor(Math.random() * 10) + 85;
+        const matchBadge = document.querySelector('.modal-left .match-percentage');
+        if (matchBadge) {
+            matchBadge.textContent = matchPercentage;
         }
         
         // Show modal
@@ -410,23 +427,32 @@ class StyleAI {
     }
 
     displayRecommendations(products) {
-        const lookItemsContainer = document.querySelector('.look-items');
+        const lookItemsContainer = document.getElementById('lookItems');
         if (!lookItemsContainer) return;
         
         lookItemsContainer.innerHTML = '';
         
-        products.slice(0, 2).forEach(product => {
+        const displayProducts = products.slice(0, 2);
+        
+        if (displayProducts.length === 0) {
+            lookItemsContainer.innerHTML = '<p style="color: #64748b; font-size: 14px;">No recommendations available yet.</p>';
+            return;
+        }
+        
+        displayProducts.forEach((product, index) => {
             const lookItem = document.createElement('div');
             lookItem.className = 'look-item';
             
+            const productId = product.product_id || product.id || `rec_${index}`;
             const color = this.getRandomColor();
+            const imageUrl = product.image_url || product.imageUrl || '';
             
             lookItem.innerHTML = `
-                <div class="look-image" style="background-color: ${color};"></div>
+                <div class="look-image" style="background-color: ${color}; ${imageUrl ? `background-image: url(${imageUrl}); background-size: cover; background-position: center;` : ''}"></div>
                 <div class="look-info">
-                    <div class="look-name">${product.name || product.title}</div>
-                    <div class="look-price">$${product.price}</div>
-                    <button class="quick-view-btn" onclick="styleAI.openQuickView('${product.id}')">Quick View</button>
+                    <div class="look-name">${product.name || product.title || 'Product'}</div>
+                    <div class="look-price">$${product.price || product.current_price || '0.00'}</div>
+                    <button class="quick-view-btn" onclick="styleAI.openQuickView('${productId}')">Quick View</button>
                 </div>
             `;
             
