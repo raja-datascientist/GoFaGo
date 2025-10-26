@@ -238,15 +238,12 @@ class StyleAI {
     }
 
     displayProducts(products) {
-        // Create product grid container if it doesn't exist
-        let productGrid = document.getElementById('productGrid');
-        if (!productGrid) {
-            const chatMessages = document.getElementById('chatMessages');
-            productGrid = document.createElement('div');
-            productGrid.className = 'product-grid';
-            productGrid.id = 'productGrid';
-            chatMessages.appendChild(productGrid);
-        }
+        const chatMessages = document.getElementById('chatMessages');
+        const productGridContainer = document.getElementById('productGridContainer');
+        
+        // Create product grid
+        productGridContainer.innerHTML = '<div class="product-grid" id="productGrid"></div>';
+        const productGrid = document.getElementById('productGrid');
         
         productGrid.innerHTML = '';
         
@@ -254,6 +251,9 @@ class StyleAI {
             const productCard = this.createProductCard(product);
             productGrid.appendChild(productCard);
         });
+        
+        // Scroll to products
+        productGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     createProductCard(product) {
@@ -613,7 +613,7 @@ class StyleAI {
             // Add AI response
             const aiResponse = document.createElement('div');
             aiResponse.className = 'ai-message';
-            aiResponse.textContent = data.response || `I found results for "${message}"! Here are the top picks:`;
+            aiResponse.textContent = data.message || `I found results for "${message}"! Here are the top picks:`;
             chatMessages.appendChild(aiResponse);
             
             // Load products if available
@@ -634,7 +634,7 @@ class StyleAI {
             chatMessages.appendChild(errorMessage);
             
             // Fallback to mock data if backend fails
-            this.loadInitialProducts();
+            this.displayProducts(this.getProductData());
             document.querySelector('.search-title').textContent = message;
         }
         
