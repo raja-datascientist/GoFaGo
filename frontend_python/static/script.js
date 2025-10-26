@@ -17,7 +17,30 @@ const recommendationsSection = document.getElementById('recommendationsSection')
 const recommendationsGrid = document.getElementById('recommendationsGrid');
 const closeDetailsBtn = document.getElementById('closeDetailsBtn');
 
+// Loading page elements
+const loadingPage = document.querySelector('.loading-page');
+const mainContent = document.querySelector('.main-content');
+const chatInputFull = document.getElementById('chatInputFull');
+const sendButtonFull = document.getElementById('sendButtonFull');
+
 // Event listeners (moved to main initialization at end of file)
+
+// Handle first message from loading page
+async function handleFirstMessage() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+    
+    // Hide loading page and show full app with search results layout
+    loadingPage.style.display = 'none';
+    mainContent.style.display = 'flex';
+    mainContent.className = 'main-content search-results'; // Go directly to search results layout
+    
+    // Transfer the message to the full app
+    chatInputFull.value = message;
+    
+    // Send the message using the full app
+    await sendMessage();
+}
 
 // Add message to chat
 function addMessage(role, content) {
@@ -36,12 +59,12 @@ function addMessage(role, content) {
 
 // Send message
 async function sendMessage() {
-    const message = chatInput.value.trim();
+    const message = chatInputFull.value.trim();
     if (!message) return;
     
     // Add user message
     addMessage('user', message);
-    chatInput.value = '';
+    chatInputFull.value = '';
     
     // Show typing indicator
     const typingDiv = document.createElement('div');
@@ -51,8 +74,8 @@ async function sendMessage() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
     
     // Disable input
-    sendButton.disabled = true;
-    sendButton.textContent = 'Sending...';
+    sendButtonFull.disabled = true;
+    sendButtonFull.textContent = 'Sending...';
     
     try {
         // Build conversation history from current messages
@@ -112,8 +135,8 @@ async function sendMessage() {
         messagesContainer.removeChild(typingDiv);
         addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
     } finally {
-        sendButton.disabled = false;
-        sendButton.textContent = 'Send';
+        sendButtonFull.disabled = false;
+        sendButtonFull.textContent = 'Send';
     }
 }
 
@@ -426,19 +449,31 @@ function handleImageError(img) {
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
-    // Add welcome message
-    addMessage('assistant', 'Hello! I\'m Sara, your AI fashion assistant. I can help you find the perfect clothing items. What are you looking for today?');
+    // Set up loading page event listeners
+    if (sendButton) {
+        sendButton.addEventListener('click', handleFirstMessage);
+    }
+    if (chatInput) {
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleFirstMessage();
+            }
+        });
+    }
     
-    // Add event listeners
-    sendButton.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
+    // Set up full app event listeners
+    if (sendButtonFull) {
+        sendButtonFull.addEventListener('click', sendMessage);
+    }
+    if (chatInputFull) {
+        chatInputFull.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
     
     // Add close button event listener
-    const closeDetailsBtn = document.getElementById('closeDetailsBtn');
     if (closeDetailsBtn) {
         closeDetailsBtn.addEventListener('click', closeProductDetails);
     }
