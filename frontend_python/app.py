@@ -25,16 +25,18 @@ def chat():
     try:
         data = request.get_json()
         user_message = data.get('message', '')
+        conversation_history = data.get('conversationHistory', [])
         
         if not user_message:
             return jsonify({'error': 'No message provided'}), 400
         
-        # Call LLM with tools (sync)
-        response = asyncio.run(call_llm_with_tools(user_message))
+        # Call LLM with tools (sync) and conversation history
+        response = asyncio.run(call_llm_with_tools(user_message, conversation_history))
         
         return jsonify({
             'message': response['message'],
-            'products': response.get('products', [])
+            'products': response.get('products', []),
+            'is_clarification': response.get('is_clarification', False)
         })
         
     except Exception as e:
@@ -64,97 +66,256 @@ def get_recommendations():
         print(f"Error in recommendations endpoint: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
-async def call_llm_with_tools(user_message: str) -> Dict[str, Any]:
+def detect_confirmation_response(message: str) -> bool:
+    """Detect if user is confirming a previous correction or suggestion"""
+    confirmation_words = [
+        'ok', 'okay', 'yes', 'sure', 'go ahead', 'proceed', 'continue',
+        'that\'s right', 'correct', 'right', 'yep', 'yeah', 'sounds good',
+        'perfect', 'great', 'good', 'fine', 'alright', 'all right'
+    ]
+    
+    message_lower = message.lower().strip()
+    return message_lower in confirmation_words or any(word in message_lower for word in confirmation_words)
+
+def detect_and_correct_fashion_typos(text: str) -> str:
+    """Detect and suggest corrections for common fashion-related typos"""
+    common_typos = {
+        'woem': 'women',
+        'womrn': 'women', 
+        'womens': 'women\'s',
+        'mens': 'men\'s',
+        'hoodie': 'hoodie',
+        'hoody': 'hoodie',
+        'hoodies': 'hoodies',
+        'sweater': 'sweater',
+        'sweaters': 'sweaters',
+        'pants': 'pants',
+        'pant': 'pants',
+        'jeans': 'jeans',
+        'jean': 'jeans',
+        'shirt': 'shirt',
+        'shirts': 'shirts',
+        'dress': 'dress',
+        'dresses': 'dresses',
+        'jacket': 'jacket',
+        'jackets': 'jackets',
+        'shoes': 'shoes',
+        'shoe': 'shoes',
+        'sneaker': 'sneakers',
+        'sneakers': 'sneakers',
+        'boots': 'boots',
+        'boot': 'boots',
+        'leggings': 'leggings',
+        'legging': 'leggings',
+        'shorts': 'shorts',
+        'short': 'shorts',
+        'tank': 'tank top',
+        'tanks': 'tank tops',
+        'tshirt': 't-shirt',
+        'tshirts': 't-shirts',
+        't-shirt': 't-shirt',
+        't-shirts': 't-shirts'
+    }
+    
+    corrected_text = text.lower()
+    corrections_made = []
+    
+    for typo, correction in common_typos.items():
+        if typo in corrected_text:
+            corrected_text = corrected_text.replace(typo, correction)
+            corrections_made.append(f"'{typo}' → '{correction}'")
+    
+    return corrected_text, corrections_made
+
+async def call_llm_with_tools(user_message: str, conversation_history: list = None) -> Dict[str, Any]:
     """Call Anthropic Claude with MCP tools"""
     anthropic_client = get_anthropic_client()
     
     try:
+        # Check for typos and prepare enhanced message
+        corrected_text, corrections_made = detect_and_correct_fashion_typos(user_message)
+        
+        # If corrections were made, include them in the context
+        enhanced_message = user_message
+        if corrections_made:
+            correction_note = f"Note: I detected some potential typos and will use the corrected terms: {', '.join(corrections_made)}"
+            enhanced_message = f"{user_message}\n\n{correction_note}"
+        
         # Get available tools
         tools = await mcp_client.get_tools_for_llm()
         
         # Create the system prompt
-        system_prompt = """You are Sara, an AI fashion assistant. You have access to tools to search for products and get recommendations.
+        system_prompt = """You are Sara, an AI fashion assistant specializing in helping customers find the perfect clothing and accessories. You have access to tools to search for products and get recommendations.
 
-When a user asks about products:
-1. Use the filter_products tool to search for products based on their request
-2. Be smart about spelling - if someone types "womrn hoodie" or "women hoodie", understand they mean "women hoodie"
-3. Use flexible search terms that will find products even with minor spelling variations
-4. Present the results in a helpful, friendly way
-5. If they click on a product, use get_similar_products to show recommendations
+IMPORTANT: As a fashion assistant, you should be helpful and understanding with customer requests. Here's how to handle different situations:
 
-Always be helpful and suggest specific products based on what the user is looking for. Handle spelling mistakes gracefully by using the correct spelling in your search."""
+1. **Typo Detection & Correction:**
+   - If someone types "woem" instead of "women", "wmne" instead of "women", etc., gently correct them
+   - ALWAYS ask for confirmation before proceeding with the search
+   - Example: "I think you meant 'women' - did you want me to search for women's tops under $50?"
+   - Wait for user confirmation before using the filter_products tool
+   - Don't immediately search - ask first, then search after confirmation
+
+2. **Conversation Flow:**
+   - When you provide a correction and the user responds with "ok", "yes", "sure", "go ahead", etc., proceed with the corrected search
+   - Don't restart the conversation - continue with the search using the corrected terms
+   - Maintain context throughout the conversation
+   - If the user confirms a correction, immediately use the filter_products tool with the corrected terms
+   - IMPORTANT: After user confirms with "yes", "ok", etc., you MUST call the filter_products tool - don't just say you'll search, actually do it!
+
+3. **Unclear Requests:**
+   - If a request is vague or unclear, ask clarifying questions
+   - Examples of unclear requests: "I need clothes", "Show me something nice", "What should I wear?"
+   - Ask specific questions like:
+     * "What type of clothing are you looking for? (tops, pants, dresses, etc.)"
+     * "What's the occasion? (work, casual, workout, etc.)"
+     * "What's your budget range?"
+     * "Any specific colors or styles you prefer?"
+
+4. **Product Search:**
+   - Use the filter_products tool to search for products based on their request
+   - Be flexible with search terms to find products even with minor variations
+   - Present results in a helpful, friendly way
+
+5. **Recommendations:**
+   - If they click on a product, use get_similar_products to show recommendations
+   - Suggest complementary items that would pair well
+
+6. **Fashion Advice:**
+   - Provide styling tips and suggestions
+   - Explain why certain items work well together
+   - Consider factors like color coordination, style matching, and occasion appropriateness
+
+CONVERSATION EXAMPLES:
+- User: "wmne tops less than 50$" → You: "I think you meant 'women' - did you want me to search for women's tops under $50?" → User: "ok" → You: [proceed with search using filter_products tool]
+- User: "I need clothes" → You: "I'd love to help! What type of clothing are you looking for?" → User: "tops" → You: [search for tops]
+- User: "hoodie under 30" → You: "I'd be happy to help you find hoodies under $30! Are you looking for men's or women's hoodies?" → User: "women" → You: [search for women's hoodies under $30]
+
+IMPORTANT CONVERSATION RULES:
+- Be conversational and friendly, not robotic
+- Ask questions to clarify before searching
+- For typos: Ask "Did you mean...?" and wait for confirmation
+- For unclear requests: Ask specific questions to understand their needs
+- Only use tools AFTER getting confirmation or clear understanding
+- Make the conversation feel natural and helpful
+- CRITICAL: When user confirms with "yes", "ok", etc., you MUST immediately call the appropriate tool (filter_products or get_similar_products)
+- Don't just say you'll search - actually call the tool!
+
+Always be encouraging, helpful, and focus on helping the customer find exactly what they're looking for. If you're unsure about their request, ask questions to better understand their needs."""
 
         print(f"Calling Claude with {len(tools)} tools")
         print(f"Tools: {[tool['name'] for tool in tools]}")
+        
+        # Build conversation messages
+        messages = []
+        
+        # Add conversation history if provided
+        if conversation_history:
+            for msg in conversation_history[-6:]:  # Keep last 6 messages for context
+                messages.append({
+                    "role": msg.get("role", "user"),
+                    "content": msg.get("content", "")
+                })
+        
+        # Add current message
+        messages.append({
+            "role": "user",
+            "content": enhanced_message
+        })
         
         # Call Claude with tool calling
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-5-20250929",
             max_tokens=4000,
             system=system_prompt,
-            messages=[
-                {
-                    "role": "user",
-                    "content": user_message
-                }
-            ],
+            messages=messages,
             tools=tools
         )
         
         # Process the response
         print(f"Claude response: {response}")
         print(f"Response content: {response.content}")
+        print(f"Number of content blocks: {len(response.content)}")
         
         if response.content:
-            message_content = response.content[0]
-            print(f"Message content: {message_content}")
-            print(f"Content type: {type(message_content)}")
+            # Check if there are multiple content blocks
+            tool_use_found = False
+            text_response = ""
             
-            if hasattr(message_content, 'text'):
-                # Simple text response
-                return {
-                    'message': message_content.text,
-                    'products': []
-                }
-            elif hasattr(message_content, 'type') and message_content.type == 'tool_use':
-                # Tool calling response
-                tool_name = message_content.name
-                tool_input = message_content.input
+            for i, message_content in enumerate(response.content):
+                print(f"Content block {i}: {message_content}")
+                print(f"Content type: {type(message_content)}")
                 
-                print(f"Tool use detected: {tool_name}")
-                print(f"Tool input: {tool_input}")
-                
-                # Call the MCP tool
-                tool_result = await mcp_client.call_tool(tool_name, tool_input)
-                
-                print(f"Tool result: {tool_result}")
-                
-                # Return response based on tool
-                if tool_name == "filter_products" and tool_result.get("success"):
-                    product_count = len(tool_result.get("products", []))
-                    if product_count > 0:
+                if hasattr(message_content, 'type') and message_content.type == 'tool_use':
+                    # Tool calling response
+                    tool_name = message_content.name
+                    tool_input = message_content.input
+                    
+                    print(f"Tool use detected: {tool_name}")
+                    print(f"Tool input: {tool_input}")
+                    
+                    # Call the MCP tool
+                    tool_result = await mcp_client.call_tool(tool_name, tool_input)
+                    
+                    print(f"Tool result: {tool_result}")
+                    
+                    # Return response based on tool
+                    if tool_name == "filter_products" and tool_result.get("success"):
+                        product_count = len(tool_result.get("products", []))
+                        if product_count > 0:
+                            return {
+                                'message': f"I found {product_count} products that match your request! Here are some great options:",
+                                'products': tool_result.get("products", [])
+                            }
+                        else:
+                            # No results found - provide helpful suggestions
+                            backend_message = tool_result.get("message", "")
+                            if backend_message:
+                                return {
+                                    'message': backend_message,
+                                    'products': []
+                                }
+                            else:
+                                # Provide helpful suggestions when no results
+                                return {
+                                    'message': "I couldn't find any products matching your search. Let me help you refine your search! Could you tell me:\n\n• What type of clothing you're looking for? (tops, pants, dresses, etc.)\n• What's your budget range?\n• Any specific colors or styles you prefer?\n• What's the occasion? (work, casual, workout, etc.)\n\nI'm here to help you find exactly what you need!",
+                                    'products': []
+                                }
+                    elif tool_name == "get_similar_products":
+                        rec_count = len(tool_result.get("recommendations", []))
                         return {
-                            'message': f"I found {product_count} products that match your request! Here are some great options:",
-                            'products': tool_result.get("products", [])
-                        }
-                    else:
-                        # Use the backend's no results message
-                        backend_message = tool_result.get("message", "I couldn't find any products matching your search. Would you like me to search for a different product or style instead?")
-                        return {
-                            'message': backend_message,
+                            'message': f"I found {rec_count} similar products for you!",
                             'products': []
                         }
-                elif tool_name == "get_similar_products":
-                    rec_count = len(tool_result.get("recommendations", []))
-                    return {
-                        'message': f"I found {rec_count} similar products for you!",
-                        'products': []
-                    }
-                else:
-                    return {
-                        'message': f"I used the {tool_name} tool to help with your request.",
-                        'products': []
-                    }
+                    else:
+                        return {
+                            'message': f"I used the {tool_name} tool to help with your request.",
+                            'products': []
+                        }
+                
+                elif hasattr(message_content, 'text'):
+                    text_response += message_content.text + " "
+            
+            # If we get here, it was a text-only response
+            if text_response.strip():
+                print(f"Text-only response: {text_response}")
+                
+                # Check if this looks like a clarification question or typo correction
+                clarification_indicators = [
+                    "did you mean", "do you mean", "i think you meant", 
+                    "what type of", "what's your", "could you tell me",
+                    "what are you looking for", "what occasion", "what budget",
+                    "did you want me to", "would you like me to", "should i search",
+                    "are you looking for", "what's your budget", "what occasion"
+                ]
+                
+                is_clarification = any(indicator in text_response.lower() for indicator in clarification_indicators)
+                
+                return {
+                    'message': text_response.strip(),
+                    'products': [],
+                    'is_clarification': is_clarification
+                }
         
         print("No valid content in response")
         return {

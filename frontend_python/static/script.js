@@ -55,12 +55,30 @@ async function sendMessage() {
     sendButton.textContent = 'Sending...';
     
     try {
+        // Build conversation history from current messages
+        const conversationHistory = [];
+        const messageElements = messagesContainer.querySelectorAll('.message');
+        
+        for (let i = 0; i < messageElements.length - 1; i++) { // Exclude the typing indicator
+            const msgElement = messageElements[i];
+            const isUser = msgElement.classList.contains('user');
+            const content = msgElement.textContent.replace(/^(You|Sara):\s*/, ''); // Remove speaker prefix
+            
+            conversationHistory.push({
+                role: isUser ? 'user' : 'assistant',
+                content: content
+            });
+        }
+        
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: message })
+            body: JSON.stringify({ 
+                message: message,
+                conversationHistory: conversationHistory
+            })
         });
         
         const data = await response.json();
@@ -83,10 +101,10 @@ async function sendMessage() {
                 };
                 showSearchResults();
             } else if (data.products && data.products.length === 0) {
-                // Clear products and show empty state
+                // Clear products and DON'T show search results page when no results
                 products = [];
                 lastSearchContext = null; // Clear search context if no results
-                showSearchResults();
+                // Don't call showSearchResults() - keep the chat layout
             }
         }
     } catch (error) {
@@ -172,7 +190,7 @@ function createProductCard(product, index) {
     card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            viewProduct(index);
+            openProductWebsite(product);
         }
     });
     
@@ -189,6 +207,10 @@ async function viewProduct(index) {
     const mainContent = document.querySelector('.main-content');
     mainContent.className = 'main-content product-details';
     console.log('Layout changed to product-details');
+    
+    // Add border to search results section to indicate selection
+    const searchResultsSection = document.getElementById('searchResultsSection');
+    searchResultsSection.classList.add('has-selection');
     
     // Show recommendations header
     const recommendationsHeader = document.getElementById('recommendationsHeader');
@@ -321,10 +343,10 @@ function displayRecommendations() {
 function createRecommendationCard(product, index) {
     const card = document.createElement('article');
     card.className = 'recommendation-card';
-    card.onclick = () => viewProduct(index);
+    card.onclick = () => openProductWebsite(product);
     card.setAttribute('role', 'button');
     card.setAttribute('tabindex', '0');
-    card.setAttribute('aria-label', `View details for ${product.description || product.name || 'Product'}`);
+    card.setAttribute('aria-label', `Open ${product.description || product.name || 'Product'} website`);
     
     // Handle price display
     const priceDisplay = product.original_price && product.original_price !== product.price 
@@ -353,11 +375,21 @@ function createRecommendationCard(product, index) {
     card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            viewProduct(index);
+            openProductWebsite(product);
         }
     });
     
     return card;
+}
+
+// Open product website
+function openProductWebsite(product) {
+    if (product.product_url) {
+        window.open(product.product_url, '_blank', 'noopener,noreferrer');
+    } else {
+        console.warn('No product URL available for:', product);
+        alert('Sorry, the product website link is not available.');
+    }
 }
 
 // Close product details
@@ -365,6 +397,10 @@ function closeProductDetails() {
     // Change layout back to search results (30% chat, 70% results)
     const mainContent = document.querySelector('.main-content');
     mainContent.className = 'main-content search-results';
+    
+    // Remove border from search results section
+    const searchResultsSection = document.getElementById('searchResultsSection');
+    searchResultsSection.classList.remove('has-selection');
     
     // Hide recommendations header
     const recommendationsHeader = document.getElementById('recommendationsHeader');

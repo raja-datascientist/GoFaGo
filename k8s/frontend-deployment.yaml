@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gofago-frontend
+  labels:
+    app: gofago-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gofago-frontend
+  template:
+    metadata:
+      labels:
+        app: gofago-frontend
+    spec:
+      containers:
+      - name: gofago-frontend
+        image: YOUR_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/gofago-frontend:latest
+        ports:
+        - containerPort: 8503
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: MCP_SERVER_URL
+          value: "http://gofago-backend-service:8000/mcp"
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: anthropic-secret
+              key: api-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8503
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8503
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gofago-frontend-service
+spec:
+  selector:
+    app: gofago-frontend
+  ports:
+  - port: 80
+    targetPort: 8503
+  type: LoadBalancer
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gofago-frontend-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gofago-frontend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

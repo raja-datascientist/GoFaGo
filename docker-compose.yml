@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: gofago-backend
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend/data:/app/data:ro
+    networks:
+      - gofago-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pandas as pd; print('Backend healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend_python
+    container_name: gofago-frontend
+    ports:
+      - "8503:8503"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MCP_SERVER_URL=http://backend:8000/mcp
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - gofago-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8503/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  gofago-network:
+    driver: bridge
+
+volumes:
+  data:
