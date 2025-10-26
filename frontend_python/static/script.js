@@ -231,9 +231,12 @@ async function viewProduct(index) {
     mainContent.className = 'main-content product-details';
     console.log('Layout changed to product-details');
     
-    // Add border to search results section to indicate selection
+    // Add border to search results section to indicate selection (only if 4+ items)
     const searchResultsSection = document.getElementById('searchResultsSection');
-    searchResultsSection.classList.add('has-selection');
+    const productCards = document.querySelectorAll('.product-card');
+    if (productCards.length >= 4) {
+        searchResultsSection.classList.add('has-selection');
+    }
     
     // Show recommendations header
     const recommendationsHeader = document.getElementById('recommendationsHeader');
