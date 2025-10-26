@@ -571,9 +571,10 @@ body {
 }
 
 .send-button:hover {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .send-button:active {
