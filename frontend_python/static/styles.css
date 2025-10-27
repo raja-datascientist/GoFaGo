@@ -595,11 +595,14 @@ body {
     flex: 1;
     padding: 8px 12px;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 18px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .view-btn-action {

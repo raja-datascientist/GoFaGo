@@ -462,8 +462,8 @@ class StyleAI {
                 <div class="product-name">${productName}</div>
                 <div class="product-price">$${productPrice}</div>
                 <div class="product-actions">
-                    <button class="action-btn view-btn-action" data-product-id="${productId}">View</button>
-                    <button class="action-btn add-btn-action" data-product-id="${productId}">Add</button>
+                    <button class="action-btn view-btn-action" data-product-id="${productId}" title="Quick View">🔍</button>
+                    <button class="action-btn add-btn-action" data-product-id="${productId}" title="Add to Cart">🛒</button>
                 </div>
             </div>
         `;
