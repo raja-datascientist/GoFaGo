@@ -1076,13 +1076,20 @@ class StyleAI {
         }
     }
     
-    openAllCartItems() {
-        this.cart.forEach(item => {
+    async openAllCartItems() {
+        let openedCount = 0;
+        
+        for (const item of this.cart) {
             if (item.vendorUrl && item.vendorUrl !== '#') {
                 window.open(item.vendorUrl, '_blank');
+                openedCount++;
+                
+                // Add a small delay between opening tabs to avoid browser blocking
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
-        });
-        this.showToast(`Opening ${this.cart.length} items in new tabs`);
+        }
+        
+        this.showToast(`Opening ${openedCount} items in new tabs`);
     }
     
     removeSelectedItems() {
