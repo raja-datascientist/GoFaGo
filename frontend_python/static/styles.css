@@ -435,13 +435,13 @@ body {
 }
 
 #productGridContainer {
-    display: block;
+    display: none !important;
     padding: 20px;
     min-height: 400px;
 }
 
-#productGridContainer:empty {
-    display: none;
+#productGridContainer:not(:empty) {
+    display: block !important;
 }
 
 #productGridContainer .product-grid {

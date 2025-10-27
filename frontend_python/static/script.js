@@ -83,6 +83,7 @@ class StyleAI {
     displayConversationHistory() {
         const chatMessages = document.getElementById('chatMessages');
         const emptyState = document.getElementById('emptyState');
+        const productGridContainer = document.getElementById('productGridContainer');
         
         if (!chatMessages) return;
         
@@ -90,6 +91,13 @@ class StyleAI {
         if (emptyState) emptyState.style.display = 'none';
         chatMessages.style.display = 'flex';
         chatMessages.style.flexDirection = 'column';
+        
+        // Hide product grid container
+        if (productGridContainer) {
+            productGridContainer.style.removeProperty('display');
+            productGridContainer.style.removeProperty('visibility');
+            productGridContainer.setAttribute('style', 'display: none !important;');
+        }
         
         // Clear existing messages
         chatMessages.innerHTML = '';
@@ -1442,16 +1450,53 @@ class StyleAI {
             chatMessages.style.display = 'flex';
         }
         
-        // Hide product grid container (favorites uses this)
+        // Hide and clear product grid container (favorites uses this)
+        // Also remove inline styles that might override display: none
         if (productGridContainer) {
-            productGridContainer.style.display = 'none';
+            // Check if the container is empty or doesn't have product cards
+            const hasProductCards = productGridContainer.querySelectorAll('.product-card').length > 0;
+            
+            // If container is empty or we're showing chat (not favorites), hide it
+            if (!hasProductCards) {
+                productGridContainer.style.removeProperty('display');
+                productGridContainer.style.removeProperty('visibility');
+                productGridContainer.setAttribute('style', 'display: none !important;');
+                productGridContainer.innerHTML = '';
+            }
         }
         
-        // Remove any empty product grids that might have been accidentally added
+        // Check for and remove any empty elements that might be causing spacing issues
         const productGrids = chatMessages.querySelectorAll('.product-grid');
+        
+        // If there are multiple grids, keep only the first one with content
+        if (productGrids.length > 1) {
+            let foundOneWithContent = false;
+            productGrids.forEach(grid => {
+                if (grid.children.length > 0 && grid.children.length === Array.from(grid.children).filter(child => child.classList.contains('product-card')).length) {
+                    if (foundOneWithContent) {
+                        grid.remove();
+                    } else {
+                        foundOneWithContent = true;
+                    }
+                } else if (grid.children.length === 0) {
+                    grid.remove();
+                }
+            });
+        }
+        
+        // Also check for empty product grids
         productGrids.forEach(grid => {
             if (grid.children.length === 0) {
                 grid.remove();
+            }
+        });
+        
+        // Remove any duplicate empty divs or spacers
+        const emptyDivs = chatMessages.querySelectorAll('div:empty');
+        emptyDivs.forEach(div => {
+            const rect = div.getBoundingClientRect();
+            if (rect.height > 0) {
+                div.remove();
             }
         });
     }
