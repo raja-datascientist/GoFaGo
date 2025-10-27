@@ -1,4 +1,4 @@
-# Nike Fashion Assistant - Python Frontend
+# AI Fashion Assistant - Python Frontend
 
 A Python-based frontend for the Nike Fashion Assistant using Streamlit, Anthropic Claude, and MCP Tools.
 
