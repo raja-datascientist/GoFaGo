@@ -81,12 +81,10 @@ class StyleAI {
             messageEl.className = message.role === 'user' ? 'user-message' : 'ai-message';
             if (message.role === 'user') {
                 messageEl.innerHTML = `
-                    <div class="message-avatar user-avatar">You</div>
                     <div class="message-content">${message.content}</div>
                 `;
             } else {
                 messageEl.innerHTML = `
-                    <div class="message-avatar ai-avatar">Sara</div>
                     <div class="message-content">${message.content}</div>
                 `;
             }
@@ -299,6 +297,18 @@ class StyleAI {
         document.querySelector('.visit-vendor-btn').addEventListener('click', () => {
             this.visitVendor();
         });
+        
+        // Favorite button in modal
+        const modalFavoriteBtn = document.querySelector('.main-image-container .favorite-btn');
+        if (modalFavoriteBtn) {
+            modalFavoriteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.currentProduct) {
+                    const productId = this.currentProduct.id || this.currentProduct.product_id;
+                    this.toggleFavorite(productId, this.currentProduct);
+                }
+            });
+        }
     }
 
     // Product data
@@ -612,13 +622,6 @@ class StyleAI {
             }
         }
         
-        // Update match badge
-        const matchPercentage = Math.floor(Math.random() * 10) + 85;
-        const matchBadge = document.querySelector('.modal-left .match-percentage');
-        if (matchBadge) {
-            matchBadge.textContent = matchPercentage;
-        }
-        
         // Update ratings (from product data if available, otherwise use defaults)
         const ratingStars = document.querySelector('.product-rating .stars');
         const ratingText = document.querySelector('.product-rating .rating-text');
@@ -629,6 +632,16 @@ class StyleAI {
         }
         if (ratingText && product.reviews) {
             ratingText.textContent = `${product.rating || 4.5} (${product.reviews})`;
+        }
+        
+        // Update favorite icon in modal
+        const modalFavoriteBtn = document.querySelector('.main-image-container .favorite-btn');
+        if (modalFavoriteBtn) {
+            const isFavorite = this.favorites.some(f => {
+                const fId = f.id || f.product_id || '';
+                return String(fId) === String(productId);
+            });
+            modalFavoriteBtn.textContent = isFavorite ? '❤️' : '♡';
         }
         
         // Update colors from product data
@@ -778,13 +791,21 @@ class StyleAI {
             const productPrice = product.price || product.current_price || '0.00';
             const cleanPrice = this.cleanPrice(productPrice);
             
+            const productId = product.id || product.product_id;
+            const isFavorite = this.favorites.some(f => {
+                const fId = f.id || f.product_id || '';
+                return String(fId) === String(productId);
+            });
+            const favoriteIcon = isFavorite ? '❤️' : '♡';
+            
             productCard.innerHTML = `
-                <div style="width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 6px; margin-bottom: 12px; background: #f1f5f9;">
+                <div style="width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 6px; margin-bottom: 12px; background: #f1f5f9; position: relative;">
                     <img src="${imageUrl}" alt="${productName}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <button class="favorite-btn-recommendation" data-product-id="${productId}" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #ef4444; transition: all 0.2s ease;">${favoriteIcon}</button>
                 </div>
                 <div style="font-size: 13px; font-weight: 500; color: #1e293b; margin-bottom: 8px; line-height: 1.4; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${productName}</div>
                 <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; flex-grow: 1;">$${cleanPrice}</div>
-                <button class="add-to-cart-recommendation" data-product-id="${product.id || product.product_id}" style="width: 100%; background: #8b5cf6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-top: auto;">Add to Cart</button>
+                <button class="add-to-cart-recommendation" data-product-id="${productId}" title="Add to Cart" style="width: 36px; height: 36px; background: transparent; border: 1px solid #e2e8f0; color: #64748b; border-radius: 50%; font-size: 18px; font-weight: normal; cursor: pointer; transition: all 0.2s ease; margin-top: auto; display: flex; align-items: center; justify-content: center; padding: 0;">🛒</button>
             `;
             
             // Add hover effect
@@ -801,16 +822,41 @@ class StyleAI {
             // Add button hover effect
             const addToCartBtn = productCard.querySelector('.add-to-cart-recommendation');
             addToCartBtn.addEventListener('mouseenter', () => {
-                addToCartBtn.style.background = '#7c3aed';
+                addToCartBtn.style.background = '#cbd5e1';
+                addToCartBtn.style.color = '#8b5cf6';
+                addToCartBtn.style.borderColor = '#8b5cf6';
             });
             addToCartBtn.addEventListener('mouseleave', () => {
-                addToCartBtn.style.background = '#8b5cf6';
+                addToCartBtn.style.background = 'transparent';
+                addToCartBtn.style.color = '#64748b';
+                addToCartBtn.style.borderColor = '#e2e8f0';
             });
+            
+            // Favorite button hover effect and click handler
+            const favoriteBtn = productCard.querySelector('.favorite-btn-recommendation');
+            if (favoriteBtn) {
+                favoriteBtn.addEventListener('mouseenter', () => {
+                    favoriteBtn.style.background = 'white';
+                    favoriteBtn.style.transform = 'scale(1.1)';
+                });
+                favoriteBtn.addEventListener('mouseleave', () => {
+                    favoriteBtn.style.background = 'rgba(255, 255, 255, 0.9)';
+                    favoriteBtn.style.transform = '';
+                });
+                // Add click handler for favorite button
+                favoriteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card click
+                    const productId = favoriteBtn.getAttribute('data-product-id');
+                    console.log('Toggling favorite for:', productId);
+                    // Pass the full product object instead of just the ID
+                    this.toggleFavorite(productId, product);
+                });
+            }
             
             // Click to view product (only on non-button areas)
             productCard.addEventListener('click', (e) => {
-                // Don't open modal if clicking the add to cart button
-                if (!e.target.classList.contains('add-to-cart-recommendation')) {
+                // Don't open modal if clicking buttons
+                if (!e.target.classList.contains('add-to-cart-recommendation') && !e.target.classList.contains('favorite-btn-recommendation')) {
                     const productId = product.id || product.product_id;
                     if (productId) {
                         this.openQuickView(productId);
@@ -953,11 +999,21 @@ class StyleAI {
         }
     }
 
-    toggleFavorite(productId) {
+    toggleFavorite(productId, productObject = null) {
         // Find the full product object
-        let product = null;
-        if (this.productsData) {
+        let product = productObject;
+        
+        // If not passed, search in productsData
+        if (!product && this.productsData) {
             product = this.productsData.find(p => {
+                const pId = p.id || p.product_id || '';
+                return String(pId) === String(productId);
+            });
+        }
+        
+        // If still not found, search in favorites
+        if (!product && this.favorites) {
+            product = this.favorites.find(p => {
                 const pId = p.id || p.product_id || '';
                 return String(pId) === String(productId);
             });
@@ -1493,7 +1549,6 @@ class StyleAI {
         const userMessage = document.createElement('div');
         userMessage.className = 'user-message';
         userMessage.innerHTML = `
-            <div class="message-avatar user-avatar">You</div>
             <div class="message-content">${message}</div>
         `;
         chatMessages.appendChild(userMessage);
@@ -1539,7 +1594,6 @@ class StyleAI {
             aiResponse.className = 'ai-message';
             const aiText = data.message || `I found results for "${message}"! Here are the top picks:`;
             aiResponse.innerHTML = `
-                <div class="message-avatar ai-avatar">Sara</div>
                 <div class="message-content">${aiText}</div>
             `;
             chatMessages.appendChild(aiResponse);
@@ -1822,6 +1876,31 @@ class StyleAI {
                 btn.textContent = isFavorite ? '❤️' : '♡';
             }
         });
+        
+        // Update favorite button states in recommendation cards
+        document.querySelectorAll('.favorite-btn-recommendation').forEach(btn => {
+            const productId = btn.getAttribute('data-product-id');
+            if (productId) {
+                const isFavorite = this.favorites.some(f => {
+                    const fId = f.id || f.product_id || '';
+                    return String(fId) === String(productId);
+                });
+                btn.textContent = isFavorite ? '❤️' : '♡';
+            }
+        });
+        
+        // Update favorite button in modal
+        const modalFavoriteBtn = document.querySelector('.main-image-container .favorite-btn');
+        if (modalFavoriteBtn && this.currentProduct) {
+            const productId = this.currentProduct.id || this.currentProduct.product_id;
+            if (productId) {
+                const isFavorite = this.favorites.some(f => {
+                    const fId = f.id || f.product_id || '';
+                    return String(fId) === String(productId);
+                });
+                modalFavoriteBtn.textContent = isFavorite ? '❤️' : '♡';
+            }
+        }
     }
 
     showToast(message) {
