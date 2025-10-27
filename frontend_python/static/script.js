@@ -10,6 +10,8 @@ class StyleAI {
         this.currentProduct = null;
         this.conversationHistory = []; // Track conversation
         this.currentSearchContext = null; // Track current search context
+        this.activeFilters = []; // Track active filter chips
+        this.originalProductsData = null; // Store original unfiltered products
         
         this.init();
     }
@@ -65,10 +67,13 @@ class StyleAI {
             });
         });
 
-        // New search button
-        document.querySelector('.new-search-btn').addEventListener('click', () => {
-            this.startNewSearch();
-        });
+        // New search button (now inline in THIS SESSION header, handled by onclick)
+        const newSearchBtn = document.querySelector('.new-search-btn');
+        if (newSearchBtn) {
+            newSearchBtn.addEventListener('click', () => {
+                this.startNewSearch();
+            });
+        }
 
         // Load more button (if exists)
         const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -113,12 +118,29 @@ class StyleAI {
             });
         });
 
-        // Filter chip removal
-        document.querySelectorAll('.remove-filter').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Filter chip removal - Use document-level event delegation  
+        document.body.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-filter')) {
+                console.log('Remove filter button clicked');
                 e.stopPropagation();
-                e.currentTarget.parentElement.remove();
-            });
+                e.preventDefault();
+                const chip = e.target.closest('.filter-chip');
+                console.log('Chip found:', chip);
+                if (chip) {
+                    const filterToRemove = chip.getAttribute('data-filter');
+                    console.log('Filter to remove:', filterToRemove);
+                    console.log('Active filters before:', this.activeFilters);
+                    
+                    if (filterToRemove) {
+                        this.activeFilters = this.activeFilters.filter(f => f !== filterToRemove);
+                    }
+                    console.log('Active filters after:', this.activeFilters);
+                    
+                    chip.remove();
+                    // Apply all remaining filters or restore all products
+                    this.applyActiveFilters();
+                }
+            }
         });
 
         // Modal close
@@ -323,6 +345,11 @@ class StyleAI {
         
         // Store products for modal and recommendations
         this.productsData = products;
+        
+        // Store original products if not already set (first time displaying results)
+        if (!this.originalProductsData) {
+            this.originalProductsData = [...products];
+        }
         
         // Save products to current session
         this.saveCurrentSession();
@@ -616,8 +643,10 @@ class StyleAI {
             });
             
             const data = await response.json();
+            console.log('Recommendations API response:', data);
             
             if (data.recommendations && data.recommendations.length > 0) {
+                console.log('Found recommendations, calling displayRecommendations');
                 this.displayRecommendations(data.recommendations);
             } else {
                 console.log('No recommendations found');
@@ -630,59 +659,112 @@ class StyleAI {
     }
 
     showRecommendationsLoading() {
-        const lookItemsContainer = document.getElementById('lookItems');
-        if (!lookItemsContainer) return;
-        
-        lookItemsContainer.innerHTML = `
-            <div class="recommendations-loading">
-                <div class="loading-spinner"></div>
-                <p>Matching items for you...</p>
-            </div>
-        `;
+        // Recommendations section removed
+        return;
     }
 
     hideRecommendationsLoading() {
-        // This is handled by displayRecommendations
+        // Recommendations section removed
     }
 
     displayNoRecommendations() {
-        const lookItemsContainer = document.getElementById('lookItems');
-        if (!lookItemsContainer) return;
-        
-        lookItemsContainer.innerHTML = '<p style="color: #64748b; font-size: 14px; text-align: center; padding: 20px;">No recommendations available at this time.</p>';
+        const recommendationsGrid = document.querySelector('.recommendations-grid');
+        if (recommendationsGrid) {
+            recommendationsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 40px; font-size: 14px;">No recommendations available at this time</p>';
+        }
     }
 
     displayRecommendations(products) {
-        const lookItemsContainer = document.getElementById('lookItems');
-        if (!lookItemsContainer) return;
-        
-        lookItemsContainer.innerHTML = '';
-        
-        const displayProducts = products.slice(0, 2);
-        
-        if (displayProducts.length === 0) {
-            lookItemsContainer.innerHTML = '<p style="color: #64748b; font-size: 14px;">No recommendations available yet.</p>';
+        console.log('displayRecommendations called with:', products);
+        const recommendationsGrid = document.querySelector('.recommendations-grid');
+        console.log('Recommendations grid:', recommendationsGrid);
+        if (!recommendationsGrid) {
+            console.log('Recommendations grid not found');
             return;
         }
         
-        displayProducts.forEach((product, index) => {
-            const lookItem = document.createElement('div');
-            lookItem.className = 'look-item';
-            
-            const productId = product.product_id || product.id || `rec_${index}`;
-            const color = this.getRandomColor();
-            const imageUrl = product.image_url || product.imageUrl || '';
-            
-            lookItem.innerHTML = `
-                <div class="look-image" style="background-color: ${color}; ${imageUrl ? `background-image: url(${imageUrl}); background-size: cover; background-position: center;` : ''}"></div>
-                <div class="look-info">
-                    <div class="look-name">${product.name || product.title || 'Product'}</div>
-                    <div class="look-price">$${product.price || product.current_price || '0.00'}</div>
-                    <button class="quick-view-btn" data-product-id="${productId}">Quick View</button>
-                </div>
+        // Clear existing recommendations
+        recommendationsGrid.innerHTML = '';
+        
+        if (!products || products.length === 0) {
+            recommendationsGrid.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No recommendations available</p>';
+            return;
+        }
+        
+        // Display each recommendation
+        console.log('Displaying', products.length, 'products');
+        products.forEach((product, index) => {
+            console.log(`Creating card for product ${index}:`, product);
+            const productCard = document.createElement('div');
+            productCard.className = 'recommended-product-card';
+            productCard.style.cssText = `
+                background: white;
+                border-radius: 8px;
+                padding: 12px;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                border: 1px solid #e2e8f0;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
             `;
             
-            lookItemsContainer.appendChild(lookItem);
+            const imageUrl = product.image_url || product.Image_Url || '';
+            const productName = product.name || product.Category || 'Product';
+            const productPrice = product.price || product.current_price || '0.00';
+            const cleanPrice = this.cleanPrice(productPrice);
+            
+            productCard.innerHTML = `
+                <div style="width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 6px; margin-bottom: 12px; background: #f1f5f9;">
+                    <img src="${imageUrl}" alt="${productName}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div style="font-size: 13px; font-weight: 500; color: #1e293b; margin-bottom: 8px; line-height: 1.4; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${productName}</div>
+                <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; flex-grow: 1;">$${cleanPrice}</div>
+                <button class="add-to-cart-recommendation" data-product-id="${product.id || product.product_id}" style="width: 100%; background: #8b5cf6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-top: auto;">Add to Cart</button>
+            `;
+            
+            // Add hover effect
+            productCard.addEventListener('mouseenter', () => {
+                productCard.style.transform = 'translateY(-2px)';
+                productCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+            });
+            
+            productCard.addEventListener('mouseleave', () => {
+                productCard.style.transform = '';
+                productCard.style.boxShadow = '';
+            });
+            
+            // Add button hover effect
+            const addToCartBtn = productCard.querySelector('.add-to-cart-recommendation');
+            addToCartBtn.addEventListener('mouseenter', () => {
+                addToCartBtn.style.background = '#7c3aed';
+            });
+            addToCartBtn.addEventListener('mouseleave', () => {
+                addToCartBtn.style.background = '#8b5cf6';
+            });
+            
+            // Click to view product (only on non-button areas)
+            productCard.addEventListener('click', (e) => {
+                // Don't open modal if clicking the add to cart button
+                if (!e.target.classList.contains('add-to-cart-recommendation')) {
+                    const productId = product.id || product.product_id;
+                    if (productId) {
+                        this.openQuickView(productId);
+                    }
+                }
+            });
+            
+            // Add to cart button handler
+            if (addToCartBtn) {
+                addToCartBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card click
+                    const productId = addToCartBtn.getAttribute('data-product-id');
+                    console.log('Adding recommendation to cart:', productId);
+                    this.addRecommendedToCart(product);
+                });
+            }
+            
+            recommendationsGrid.appendChild(productCard);
         });
     }
 
@@ -700,6 +782,19 @@ class StyleAI {
         document.querySelectorAll('.product-card').forEach(card => {
             card.classList.remove('highlighted');
         });
+        
+        // Clear recommendations when closing modal
+        const recommendationsGrid = document.querySelector('.recommendations-grid');
+        if (recommendationsGrid) {
+            recommendationsGrid.innerHTML = `
+                <div class="recommendations-loading" style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                    <div style="display: inline-flex; align-items: center; gap: 8px;">
+                        <div class="loading-spinner"></div>
+                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">AI is finding matching items<span class="loading-dots"></span></span>
+                    </div>
+                </div>
+            `;
+        }
     }
 
     addToCart(productId) {
@@ -752,6 +847,39 @@ class StyleAI {
     addToCartFromModal() {
         if (this.currentProduct) {
             this.addToCart(this.currentProduct.id);
+        }
+    }
+
+    addRecommendedToCart(product) {
+        // Get all available product fields from the recommendation
+        const rawPrice = product.price || product.current_price || '0.00';
+        const cleanPrice = this.formatPrice(rawPrice);
+        
+        const cartItem = {
+            id: product.id || product.product_id || Date.now().toString(),
+            brand: product.brand || 'Nike',
+            name: product.name || product.Category || product.description || 'Product',
+            price: cleanPrice,
+            vendor: product.vendor || 'nike.com',
+            vendorUrl: product.product_url || product.url || '#',
+            imageColor: product.imageColor || '#d9e8ff',
+            image_url: product.image_url || product.Image_Url || '',
+            color: product.colors || product.colors_available || '',
+            size: product.sizes || '',
+            category: product.category || '',
+            description: product.detailed_description || product.description || '',
+            addedAt: Date.now()
+        };
+        
+        // Check if item already exists
+        const existingIndex = this.cart.findIndex(item => item.id === cartItem.id);
+        if (existingIndex === -1) {
+            this.cart.push(cartItem);
+            this.saveCart();
+            this.updateCartBadge();
+            this.showToast('Added to cart!');
+        } else {
+            this.showToast('Item already in cart');
         }
     }
 
@@ -1030,51 +1158,76 @@ class StyleAI {
         
         const filterText = filterTexts[filter] || filter;
         
+        // Store active filters if not already stored
+        if (!this.activeFilters) {
+            this.activeFilters = [];
+        }
+        this.activeFilters.push(filter);
+        
         // Add filter chip
         const filterChips = document.querySelector('.filter-chips');
         if (filterChips) {
             const chip = document.createElement('div');
             chip.className = 'filter-chip';
+            chip.setAttribute('data-filter', filter);
             chip.innerHTML = `
                 ${filterText}
                 <button class="remove-filter">×</button>
             `;
             
-            // Add remove functionality
-            chip.querySelector('.remove-filter').addEventListener('click', (e) => {
-                e.stopPropagation();
-                chip.remove();
-            });
-            
+            // Event handling is done via event delegation in init
             filterChips.appendChild(chip);
         }
         
-        // Filter products based on the refinement
-        let filteredProducts = [...this.productsData];
-        
-        if (filter === 'under-50') {
-            filteredProducts = filteredProducts.filter(p => {
-                const price = this.cleanPrice(p.price || p.current_price);
-                return price < 50;
-            });
-        } else if (filter === 'premium') {
-            filteredProducts = filteredProducts.filter(p => {
-                const price = this.cleanPrice(p.price || p.current_price);
-                return price >= 100;
-            });
-        } else if (filter === 'sale') {
-            filteredProducts = filteredProducts.filter(p => {
-                const listPrice = this.cleanPrice(p.list_price || p.list_price);
-                const currentPrice = this.cleanPrice(p.price || p.current_price);
-                return listPrice > currentPrice;
-            });
+        // Apply the filter
+        this.applyActiveFilters();
+    }
+    
+    applyActiveFilters() {
+        console.log('applyActiveFilters called, activeFilters:', this.activeFilters);
+        // Use original products data, not the current filtered productsData
+        const sourceProducts = this.originalProductsData || this.productsData;
+        if (!sourceProducts) {
+            console.log('No products data available');
+            return;
         }
         
+        let filteredProducts = [...sourceProducts];
+        console.log('Starting with', filteredProducts.length, 'products');
+        
+        // Apply all active filters if any
+        if (this.activeFilters.length > 0) {
+            for (const filter of this.activeFilters) {
+                if (filter === 'under-50') {
+                    filteredProducts = filteredProducts.filter(p => {
+                        const price = this.cleanPrice(p.price || p.current_price);
+                        return price < 50;
+                    });
+                } else if (filter === 'premium') {
+                    filteredProducts = filteredProducts.filter(p => {
+                        const price = this.cleanPrice(p.price || p.current_price);
+                        return price >= 100;
+                    });
+                } else if (filter === 'sale') {
+                    filteredProducts = filteredProducts.filter(p => {
+                        const listPrice = this.cleanPrice(p.list_price || p.list_price);
+                        const currentPrice = this.cleanPrice(p.price || p.current_price);
+                        return listPrice > currentPrice;
+                    });
+                }
+            }
+        }
+        
+        console.log('After filtering:', filteredProducts.length, 'products');
+        
+        // Always display products (filtered or all)
         if (filteredProducts.length > 0) {
             this.displayProducts(filteredProducts);
-            this.showToast(`Filtered to ${filteredProducts.length} results`);
+            if (this.activeFilters.length > 0) {
+                this.showToast(`Showing ${filteredProducts.length} results`);
+            }
         } else {
-            this.showToast('No products match this filter');
+            this.showToast('No products match the filters');
         }
     }
 
@@ -1121,11 +1274,10 @@ class StyleAI {
             const timeAgo = this.getTimeAgo(item.timestamp);
             
             searchItem.innerHTML = `
-                <div class="search-thumbnail" style="background-color: ${item.thumbnail};"></div>
                 <div class="search-info">
                     <div class="search-title">${item.query.length > 15 ? item.query.substring(0, 15) + '...' : item.query}</div>
                     <div class="search-meta">${timeAgo} • ${item.resultCount} items</div>
-        </div>
+                </div>
     `;
     
             searchItem.addEventListener('click', () => {
@@ -1188,6 +1340,8 @@ class StyleAI {
         if (filterChips) {
             filterChips.innerHTML = '';
         }
+        this.activeFilters = [];
+        this.originalProductsData = null; // Reset original products for new search
         
         const chatMessages = document.getElementById('chatMessages');
         
@@ -1340,7 +1494,6 @@ class StyleAI {
         document.getElementById('chatMessages').style.display = 'none';
         document.getElementById('chatMessages').innerHTML = '';
         document.getElementById('productGridContainer').innerHTML = '';
-        document.getElementById('lookItems').innerHTML = '';
         
         // Update sessions display
         this.updateSearchSessions();
@@ -1386,7 +1539,6 @@ class StyleAI {
             const timeAgo = this.getTimeAgo(session.timestamp);
             
             sessionItem.innerHTML = `
-                <div class="search-thumbnail" style="background-color: ${this.getRandomColor()}"></div>
                 <div class="search-info" style="flex: 1;">
                     <div class="search-title">${title.length > 15 ? title.substring(0, 15) + '...' : title}</div>
                     <div class="search-meta">${timeAgo}</div>

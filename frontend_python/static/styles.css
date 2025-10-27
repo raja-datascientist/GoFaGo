@@ -107,6 +107,28 @@ body {
     margin-bottom: 16px;
 }
 
+.new-search-btn-inline {
+    background: transparent;
+    border: 1px solid #475569;
+    color: #94a3b8;
+    padding: 4px 8px;
+    margin: 0;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: none;
+    letter-spacing: 0;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.new-search-btn-inline:hover {
+    border-color: #64748b;
+    color: white;
+    background: rgba(100, 116, 139, 0.1);
+}
+
 .search-history {
     display: flex;
     flex-direction: column;
@@ -116,7 +138,6 @@ body {
 .search-item {
     display: flex;
     align-items: center;
-    gap: 12px;
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
@@ -144,8 +165,8 @@ body {
 }
 
 .search-title {
-    font-size: 6px;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 400;
     color: white;
     margin-bottom: 2px;
     white-space: nowrap;
@@ -162,7 +183,7 @@ body {
 }
 
 .search-meta {
-    font-size: 11px;
+    font-size: 10px;
     color: #94a3b8;
 }
 
@@ -306,7 +327,7 @@ body {
 }
 
 .search-title {
-    font-size: 18px;
+    font-size: 13px;
     font-weight: 700;
     color: #1e293b;
 }
@@ -395,7 +416,7 @@ body {
 /* Product Grid */
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 20px;
     margin-bottom: 32px;
 }
@@ -613,8 +634,8 @@ body {
 
 /* Right Panel */
 .right-panel {
-    width: 280px;
-    min-width: 280px;
+    width: 200px;
+    min-width: 200px;
     background: #f8fafc;
     padding: 24px;
     overflow-y: auto;
@@ -677,23 +698,33 @@ body {
 }
 
 .refinement-btn {
-    background: white;
-    border: 1px solid #e2e8f0;
-    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
     border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #475569;
+    font-size: 13px;
+    font-weight: 400;
+    color: #cbd5e1;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    text-align: left;
 }
 
 .refinement-btn:hover {
-    border-color: #8b5cf6;
-    color: #8b5cf6;
+    background: #334155;
+    color: white;
+}
+
+.sidebar .refinements-section h3 {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
 }
 
 .arrow {
@@ -834,10 +865,9 @@ body {
     border-radius: 12px;
     width: 950px;
     max-width: 95vw;
-    max-height: 680px;
     max-height: 95vh;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
@@ -952,6 +982,66 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+}
+
+.complete-the-look-section {
+    margin-top: auto;
+    width: 100%;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.complete-the-look-section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 16px;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    align-items: stretch;
+}
+
+.recommended-product-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.recommended-product-card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #f1f5f9;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #e2e8f0;
+    border-top: 3px solid #8b5cf6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-dots::after {
+    content: '...';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
 }
 
 .product-brand {

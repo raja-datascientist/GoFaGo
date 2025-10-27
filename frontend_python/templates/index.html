@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StyleAI - Smart Fashion Search</title>
+    <title>Go Fa Go AI - Smart Fashion Search</title>
     <meta name="description" content="AI-powered fashion search platform for finding the perfect style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,38 +20,36 @@
                     <h1>Go Fashion Go</h1>
                     <p class="tagline">AI Search for Premium Brands</p>
                 </div>
-                <button class="new-search-btn">
-                    <span class="plus-icon">+</span>
-                    New Search
-                </button>
             </div>
 
             <div class="sidebar-content">
                 <!-- This Session -->
                 <div class="session-section">
-                    <h3>THIS SESSION</h3>
+                    <h3 style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>THIS SESSION</span>
+                        <button class="new-search-btn-inline" onclick="styleAI.startNewSearch()">+ New Search</button>
+                    </h3>
                     <div class="search-history">
-                        <div class="search-item active">
-                            <div class="search-thumbnail" style="background-color: #d9e8ff;"></div>
-                            <div class="search-info">
-                                <div class="search-title">Blue Polo Shi...</div>
-                                <div class="search-meta">just now • 12 items</div>
-                            </div>
-                        </div>
-                        <div class="search-item">
-                            <div class="search-thumbnail" style="background-color: #fce4ec;"></div>
-                            <div class="search-info">
-                                <div class="search-title">Summer Dresses</div>
-                                <div class="search-meta">5 min ago • 24 items</div>
-                            </div>
-                        </div>
-                        <div class="search-item">
-                            <div class="search-thumbnail" style="background-color: #e8f5e8;"></div>
-                            <div class="search-info">
-                                <div class="search-title">Running Shoes</div>
-                                <div class="search-meta">12 min ago • 18 items</div>
-                            </div>
-                        </div>
+                        <!-- Sessions will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Quick Refinements -->
+                <div class="refinements-section sidebar">
+                    <h3>QUICK REFINEMENTS</h3>
+                    <div class="refinement-options" style="display: flex; flex-direction: column; gap: 8px;">
+                        <button class="refinement-btn" data-filter="under-50">
+                            Under $50
+                        </button>
+                        <button class="refinement-btn" data-filter="premium">
+                            Premium Brands
+                        </button>
+                        <button class="refinement-btn" data-filter="sale">
+                            Sale Items
+                        </button>
+                        <button class="refinement-btn" data-filter="sustainable">
+                            Sustainable
+                        </button>
                     </div>
                 </div>
 
@@ -68,18 +66,6 @@
                             <span class="link-icon">❤️</span>
                             Session Favorites
                             <span class="badge">8</span>
-                        </a>
-                        <a href="#" class="quick-link" data-page="trending">
-                            <span class="link-icon">🔥</span>
-                            Trending Now
-                        </a>
-                        <a href="#" class="quick-link" data-page="new">
-                            <span class="link-icon">✨</span>
-                            New Arrivals
-                        </a>
-                        <a href="#" class="quick-link" data-page="sale">
-                            <span class="link-icon">🏷️</span>
-                            Sale Items
                         </a>
                     </nav>
                 </div>
@@ -118,50 +104,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Right Panel -->
-            <aside class="right-panel">
-                <!-- Complete The Look -->
-                <div class="complete-look-section">
-                    <h3>Complete The Look</h3>
-                    <div class="look-items" id="lookItems">
-                        <!-- Recommendations will be loaded here dynamically -->
-                    </div>
-                </div>
-
-                <!-- Quick Refinements -->
-                <div class="refinements-section">
-                    <h3>Quick Refinements</h3>
-                    <div class="refinement-options">
-                        <button class="refinement-btn" data-filter="under-50">
-                            Under $50
-                            <span class="arrow">→</span>
-                        </button>
-                        <button class="refinement-btn" data-filter="premium">
-                            Premium Brands
-                            <span class="arrow">→</span>
-                        </button>
-                        <button class="refinement-btn" data-filter="sale">
-                            Sale Items
-                            <span class="arrow">→</span>
-                        </button>
-                        <button class="refinement-btn" data-filter="sustainable">
-                            Sustainable
-                            <span class="arrow">→</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- People Also Search -->
-                <div class="related-searches-section">
-                    <h3>People Also Search</h3>
-                    <div class="search-pills">
-                        <button class="search-pill">Navy polo shirts</button>
-                        <button class="search-pill">Striped polos</button>
-                        <button class="search-pill">Golf polos</button>
-                    </div>
-                </div>
-            </aside>
         </main>
     </div>
 
@@ -228,6 +170,19 @@
                     <div class="modal-actions">
                         <button class="add-to-cart-btn">🛍️ Add to Cart</button>
                         <button class="visit-vendor-btn">Visit Vendor →</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Complete the Look Section -->
+            <div class="complete-the-look-section" style="padding: 24px; border-top: 1px solid #e2e8f0;">
+                <h3 style="margin-bottom: 16px; color: #1e293b; font-size: 18px; font-weight: 600;">Complete the Look</h3>
+                <div class="recommendations-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+                    <div class="recommendations-loading" style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                        <div style="display: inline-flex; align-items: center; gap: 8px;">
+                            <div class="loading-spinner"></div>
+                            <span style="color: #64748b; font-size: 14px; font-weight: 500;">AI is finding matching items<span class="loading-dots"></span></span>
+                        </div>
                     </div>
                 </div>
             </div>
