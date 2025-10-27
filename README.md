@@ -1,4 +1,4 @@
-# Nike Fashion Assistant
+# AI Fashion Assistant
 
 A complete AI-powered fashion assistant built with **Model Context Protocol (MCP)**, **Anthropic Claude**, and **Python Streamlit**.
 
