@@ -8,8 +8,19 @@ class StyleAI {
         this.currentSessionId = this.searchSessions.length > 0 ? this.searchSessions[this.searchSessions.length - 1].id : null;
         this.selectedProducts = new Set();
         this.currentProduct = null;
-        this.conversationHistory = []; // Track conversation
-        this.currentSearchContext = null; // Track current search context
+        
+        // Load conversation history from current session
+        if (this.currentSessionId) {
+            const currentSession = this.searchSessions.find(s => s.id === this.currentSessionId);
+            this.conversationHistory = currentSession && currentSession.conversationHistory ? currentSession.conversationHistory : [];
+            this.currentSearchContext = currentSession && currentSession.searchContext ? currentSession.searchContext : null;
+            this.productsData = currentSession && currentSession.products ? currentSession.products : null;
+        } else {
+            this.conversationHistory = [];
+            this.currentSearchContext = null;
+            this.productsData = null;
+        }
+        
         this.activeFilters = []; // Track active filter chips
         this.originalProductsData = null; // Store original unfiltered products
         
@@ -37,7 +48,42 @@ class StyleAI {
         this.updateFavoritesBadge();
         this.updateSearchSessions();
         this.setupPageRefreshWarning();
-        // Don't load initial products - start with empty state
+        
+        // If there's existing conversation history, display it
+        if (this.conversationHistory && this.conversationHistory.length > 0) {
+            this.displayConversationHistory();
+        }
+    }
+    
+    displayConversationHistory() {
+        const chatMessages = document.getElementById('chatMessages');
+        const emptyState = document.getElementById('emptyState');
+        
+        if (!chatMessages) return;
+        
+        // Hide empty state and show chat messages
+        if (emptyState) emptyState.style.display = 'none';
+        chatMessages.style.display = 'flex';
+        chatMessages.style.flexDirection = 'column';
+        
+        // Clear existing messages
+        chatMessages.innerHTML = '';
+        
+        // Display all messages from conversation history
+        this.conversationHistory.forEach(message => {
+            const messageEl = document.createElement('div');
+            messageEl.className = message.role === 'user' ? 'user-message' : 'ai-message';
+            messageEl.innerHTML = message.content;
+            chatMessages.appendChild(messageEl);
+        });
+        
+        // Display products if available
+        if (this.productsData && this.productsData.length > 0) {
+            this.displayProducts(this.productsData);
+        }
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     setupPageRefreshWarning() {
