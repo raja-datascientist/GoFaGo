@@ -100,13 +100,14 @@ body {
 
 .session-section h3,
 .quick-links-section h3 {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
-    color: #9ca3af;
+    color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 16px;
     text-align: left;
+    font-family: 'Andale Mono', 'Courier New', monospace;
 }
 
 .new-search-btn-inline {
@@ -178,6 +179,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: 'Andale Mono', 'Courier New', monospace;
 }
 
 .search-item .search-title {
@@ -213,10 +215,11 @@ body {
     color: #d1d5db;
     text-decoration: none;
     font-size: 12px;
-    font-weight: 400;
+    font-weight: 300;
     transition: all 0.2s ease;
     position: relative;
     text-align: left;
+    font-family: 'Andale Mono', 'Courier New', monospace;
 }
 
 .quick-link:hover {
@@ -843,9 +846,9 @@ body {
     border: none;
     padding: 8px 12px;
     border-radius: 8px;
-    font-size: 13px;
-    font-weight: 400;
-    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 300;
+    color: #e5e7eb;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -854,6 +857,7 @@ body {
     text-align: left;
     width: 100%;
     text-align: left !important;
+    font-family: 'Andale Mono', 'Courier New', monospace;
 }
 
 .refinement-btn span {
@@ -861,17 +865,18 @@ body {
 }
 
 .refinement-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     color: #ffffff;
 }
 
 .sidebar .refinements-section h3 {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
-    color: #9ca3af;
+    color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 16px;
+    font-family: 'Andale Mono', 'Courier New', monospace;
 }
 
 .arrow {

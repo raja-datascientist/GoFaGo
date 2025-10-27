@@ -481,6 +481,9 @@ class StyleAI {
             
             // Auto scroll to bottom after products are added
             this.autoScroll();
+            
+            // Update cart button states after products are rendered
+            this.updateCartButtonStates();
         }
     }
 
@@ -986,16 +989,37 @@ class StyleAI {
             addedAt: Date.now()
         };
         
-        // Check if item already exists
+        // Check if item already exists - toggle behavior
         const existingIndex = this.cart.findIndex(item => item.id === cartItem.id);
         if (existingIndex === -1) {
             this.cart.push(cartItem);
-            this.saveCart();
-            this.updateCartBadge();
             this.showToast('Added to cart!');
         } else {
-            this.showToast('Item already in cart');
+            this.cart.splice(existingIndex, 1);
+            this.showToast('Removed from cart');
         }
+        
+        this.saveCart();
+        this.updateCartBadge();
+        this.updateCartButtonStates();
+    }
+    
+    updateCartButtonStates() {
+        // Update all cart buttons to show if item is in cart
+        document.querySelectorAll('.add-btn-action').forEach(btn => {
+            const productId = btn.getAttribute('data-product-id');
+            const isInCart = this.cart.some(item => item.id === productId);
+            
+            if (isInCart) {
+                btn.classList.add('in-cart');
+                btn.style.background = '#c4b5fd';
+                btn.style.color = 'white';
+            } else {
+                btn.classList.remove('in-cart');
+                btn.style.background = '';
+                btn.style.color = '';
+            }
+        });
     }
 
     addToCartFromModal() {
@@ -1208,11 +1232,11 @@ class StyleAI {
                     <div id="cartItemsList" style="display: flex; flex-direction: column; gap: 16px;"></div>
                 </div>
                 
-                <div style="flex-shrink: 0; background: linear-gradient(135deg, #2d2d2d 0%, #252525 50%, #1f1f1f 100%); padding: 16px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); position: sticky; bottom: 0; display: flex; flex-direction: column; align-items: center;">
-                    <p style="text-align: center; color: #9ca3af; margin-bottom: 12px; font-size: 11px;">
+                <div style="flex-shrink: 0; padding: 16px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); position: sticky; bottom: 0; display: flex; flex-direction: column; align-items: flex-end; padding-right: 24px;">
+                    <p style="text-align: right; color: #9ca3af; margin-bottom: 12px; font-size: 11px;">
                         Total estimated: <strong style="color: #e5e7eb; font-size: 14px;">$${total.toFixed(2)}</strong> (from ${this.cart.length} vendor${this.cart.length > 1 ? 's' : ''})
                     </p>
-                    <button onclick="styleAI.openAllCartItems()" style="width: 40%; background: #8b5cf6; color: white; padding: 12px; border: none; border-radius: 20px; font-weight: 600; font-size: 12px; cursor: pointer;">Open All ${this.cart.length} Items in separate tabs</button>
+                    <button onclick="styleAI.openAllCartItems()" style="width: 24%; background: #8b5cf6; color: white; padding: 12px; border: none; border-radius: 20px; font-weight: 600; font-size: 12px; cursor: pointer;">Open All ${this.cart.length} Items in separate tabs</button>
                 </div>
             </div>
         `;
