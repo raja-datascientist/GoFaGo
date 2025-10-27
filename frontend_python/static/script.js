@@ -45,6 +45,12 @@ class StyleAI {
     init() {
         this.setupEventListeners();
         this.updateCartBadge();
+        
+        // Clear old favorites from localStorage to remove any static data
+        localStorage.removeItem('styleai_session_favorites');
+        this.favorites = [];
+        this.saveFavorites();
+        
         this.updateFavoritesBadge();
         this.updateSearchSessions();
         this.setupPageRefreshWarning();
@@ -73,7 +79,17 @@ class StyleAI {
         this.conversationHistory.forEach(message => {
             const messageEl = document.createElement('div');
             messageEl.className = message.role === 'user' ? 'user-message' : 'ai-message';
-            messageEl.innerHTML = message.content;
+            if (message.role === 'user') {
+                messageEl.innerHTML = `
+                    <div class="message-avatar user-avatar">You</div>
+                    <div class="message-content">${message.content}</div>
+                `;
+            } else {
+                messageEl.innerHTML = `
+                    <div class="message-avatar ai-avatar">Sara</div>
+                    <div class="message-content">${message.content}</div>
+                `;
+            }
             chatMessages.appendChild(messageEl);
         });
         
@@ -429,23 +445,25 @@ class StyleAI {
         const productName = product.name || product.title || 'Product Name';
         const productBrand = product.brand || 'Brand';
         const productPrice = this.formatPrice(product.price || product.current_price || '0.00');
-        const matchScore = product.matchPercentage || Math.floor(Math.random() * 10) + 85;
+        
+        // Check if this product is already in favorites
+        const isFavorite = this.favorites.some(f => {
+            const fId = f.id || f.product_id || '';
+            return String(fId) === String(productId);
+        });
+        const favoriteIcon = isFavorite ? '❤️' : '♡';
         
         card.innerHTML = `
             <div class="product-image ${colorClass}" ${imageUrl ? `style="background-image: url(${imageUrl}); background-size: cover; background-position: center;"` : ''}>
-                <button class="favorite-btn" onclick="styleAI.toggleFavorite('${productId}')">♡</button>
-                <div class="match-badge">
-                    <span class="match-percentage">${matchScore}</span>
-                    <span class="match-text">match</span>
-                </div>
+                <button class="favorite-btn" onclick="styleAI.toggleFavorite('${productId}')">${favoriteIcon}</button>
             </div>
             <div class="product-info">
                 <div class="product-brand">${productBrand}</div>
                 <div class="product-name">${productName}</div>
                 <div class="product-price">$${productPrice}</div>
                 <div class="product-actions">
-                    <button class="action-btn view-btn-action" data-product-id="${productId}">👁️ View</button>
-                    <button class="action-btn add-btn-action" data-product-id="${productId}">🛍️ Add</button>
+                    <button class="action-btn view-btn-action" data-product-id="${productId}">View</button>
+                    <button class="action-btn add-btn-action" data-product-id="${productId}">Add</button>
                 </div>
             </div>
         `;
@@ -936,16 +954,46 @@ class StyleAI {
     }
 
     toggleFavorite(productId) {
-        const index = this.favorites.indexOf(productId);
-        if (index === -1) {
-            this.favorites.push(productId);
-        } else {
-            this.favorites.splice(index, 1);
+        // Find the full product object
+        let product = null;
+        if (this.productsData) {
+            product = this.productsData.find(p => {
+                const pId = p.id || p.product_id || '';
+                return String(pId) === String(productId);
+            });
         }
         
-        this.saveFavorites();
-        this.updateFavoritesBadge();
-        this.showToast(index === -1 ? 'Added to favorites!' : 'Removed from favorites');
+        if (!product) {
+            console.error('Product not found for favorite:', productId);
+            return;
+        }
+        
+        // Check if product is already in favorites
+        const existingIndex = this.favorites.findIndex(f => {
+            const fId = f.id || f.product_id || '';
+            return String(fId) === String(productId);
+        });
+        
+        if (existingIndex === -1) {
+            // Add to favorites
+            this.favorites.push(product);
+            this.saveFavorites();
+            this.updateFavoritesBadge();
+            this.updateFavoriteButtonStates();
+            this.showToast('Added to favorites!');
+        } else {
+            // Remove from favorites
+            this.favorites.splice(existingIndex, 1);
+            this.saveFavorites();
+            this.updateFavoritesBadge();
+            this.updateFavoriteButtonStates();
+            this.showToast('Removed from favorites');
+            
+            // If on favorites page, refresh it to remove the product
+            if (this.currentPage === 'favorites') {
+                this.showFavoritesPage();
+            }
+        }
     }
 
     navigateToPage(page) {
@@ -988,9 +1036,9 @@ class StyleAI {
                 this.showSearchPage();
         }
         
-        // Show chat input for non-cart pages
+        // Show chat input for non-cart and non-favorites pages
         const messageInputContainer = document.querySelector('.message-input-container');
-        if (messageInputContainer && page !== 'cart') {
+        if (messageInputContainer && page !== 'cart' && page !== 'favorites') {
             messageInputContainer.style.display = 'flex';
         }
     }
@@ -1178,7 +1226,43 @@ class StyleAI {
     }
 
     showFavoritesPage() {
-        this.showToast('Favorites page would load here');
+        const chatMessages = document.getElementById('chatMessages');
+        const productGridContainer = document.getElementById('productGridContainer');
+        const messageInputContainer = document.querySelector('.message-input-container');
+        
+        // Hide chat input
+        if (messageInputContainer) {
+            messageInputContainer.style.display = 'none';
+        }
+        
+        // Hide empty state and show content
+        document.getElementById('emptyState').style.display = 'none';
+        chatMessages.style.display = 'none';
+        
+        // Clear previous content
+        productGridContainer.innerHTML = '';
+        
+        if (this.favorites.length === 0) {
+            productGridContainer.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px;">
+                    <h3 style="color: #64748b; margin-bottom: 16px;">No favorites yet</h3>
+                    <p style="color: #94a3b8;">Click the heart icon on products to add them to your favorites</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Display favorites
+        productGridContainer.innerHTML = '<div class="product-grid" id="productGrid"></div>';
+        const productGrid = document.getElementById('productGrid');
+        
+        this.favorites.forEach((product, index) => {
+            const productCard = this.createProductCard(product, index);
+            productGrid.appendChild(productCard);
+        });
+        
+        // Scroll to products
+        productGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     showTrendingPage() {
@@ -1408,7 +1492,10 @@ class StyleAI {
         // Add user message to chat
         const userMessage = document.createElement('div');
         userMessage.className = 'user-message';
-        userMessage.textContent = message;
+        userMessage.innerHTML = `
+            <div class="message-avatar user-avatar">You</div>
+            <div class="message-content">${message}</div>
+        `;
         chatMessages.appendChild(userMessage);
         
         // Add user message to conversation history
@@ -1450,7 +1537,11 @@ class StyleAI {
             // Add AI response
             const aiResponse = document.createElement('div');
             aiResponse.className = 'ai-message';
-            aiResponse.textContent = data.message || `I found results for "${message}"! Here are the top picks:`;
+            const aiText = data.message || `I found results for "${message}"! Here are the top picks:`;
+            aiResponse.innerHTML = `
+                <div class="message-avatar ai-avatar">Sara</div>
+                <div class="message-content">${aiText}</div>
+            `;
             chatMessages.appendChild(aiResponse);
             
             // Add AI response to conversation history
@@ -1717,6 +1808,20 @@ class StyleAI {
         if (badge) {
             badge.textContent = this.favorites.length;
         }
+    }
+    
+    updateFavoriteButtonStates() {
+        // Update favorite button states in product cards
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            const productId = btn.closest('.product-card')?.dataset?.productId;
+            if (productId) {
+                const isFavorite = this.favorites.some(f => {
+                    const fId = f.id || f.product_id || '';
+                    return String(fId) === String(productId);
+                });
+                btn.textContent = isFavorite ? '❤️' : '♡';
+            }
+        });
     }
 
     showToast(message) {
