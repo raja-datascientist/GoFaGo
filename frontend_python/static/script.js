@@ -1097,20 +1097,20 @@ class StyleAI {
     }
 
     navigateToPage(page) {
-        // Update active states
+        // Update active states - remove active from all quick-link items
         document.querySelectorAll('.quick-link').forEach(link => {
             link.classList.remove('active');
         });
         
-        document.querySelector(`[data-page="${page}"]`).classList.add('active');
-        
-        // Update search history active state
+        // Update search history active state - remove active from all search items
         document.querySelectorAll('.search-item').forEach(item => {
             item.classList.remove('active');
         });
         
-        if (page === 'search') {
-            document.querySelector('.search-item').classList.add('active');
+        // Add active class only if the page element exists
+        const pageElement = document.querySelector(`[data-page="${page}"]`);
+        if (pageElement) {
+            pageElement.classList.add('active');
         }
         
         this.currentPage = page;
@@ -1927,12 +1927,16 @@ class StyleAI {
                     <div class="search-title">${title.length > 15 ? title.substring(0, 15) + '...' : title}</div>
                     <div class="search-meta">${timeAgo}</div>
                 </div>
-                <button class="delete-session-btn" data-session-id="${session.id}" style="background: transparent; border: none; color: #64748b; font-size: 16px; padding: 4px 8px; cursor: pointer; border-radius: 4px;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='#64748b';">×</button>
+                <button class="delete-session-btn" data-session-id="${session.id}" style="background: none; border: none; color: white; font-size: 12px; padding: 0; width: 16px; height: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.6; transition: all 0.2s ease;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.3)';" onmouseout="this.style.opacity='0.6'; this.style.transform='scale(1)';">×</button>
             `;
             
             sessionItem.addEventListener('click', (e) => {
                 // Don't switch if clicking the delete button
                 if (!e.target.classList.contains('delete-session-btn')) {
+                    // Remove active from any quick-link items first
+                    document.querySelectorAll('.quick-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
                     this.switchSession(session.id);
                 }
             });
@@ -1966,11 +1970,16 @@ class StyleAI {
         // Clear product grid
         document.getElementById('productGridContainer').innerHTML = '';
         
-        // Restore UI
-        if (session.products && session.products.length > 0) {
+        // Restore conversation history and products
+        this.displayConversationHistory();
+        
+        // Restore UI state
+        if (session.conversationHistory && session.conversationHistory.length > 0) {
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatMessages').style.display = 'flex';
-            this.displayProducts(session.products);
+        } else if (session.products && session.products.length > 0) {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('chatMessages').style.display = 'flex';
         } else {
             document.getElementById('emptyState').style.display = 'flex';
             document.getElementById('chatMessages').style.display = 'none';
@@ -1982,6 +1991,15 @@ class StyleAI {
             if (searchTitleEl) {
                 searchTitleEl.textContent = session.title;
             }
+        }
+        
+        // Update active state for the clicked session item
+        document.querySelectorAll('.search-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        const activeSessionItem = document.querySelector(`[data-session-id="${sessionId}"]`);
+        if (activeSessionItem) {
+            activeSessionItem.classList.add('active');
         }
         
         this.updateSearchSessions();
