@@ -719,7 +719,7 @@ class StyleAI {
         // Update visit vendor button
         const visitBtn = document.querySelector('.visit-vendor-btn');
         if (visitBtn) {
-            visitBtn.textContent = `Visit ${brand} →`;
+            visitBtn.textContent = 'Visit Store';
             visitBtn.addEventListener('click', () => {
                 window.open(product.product_url || product.product_page_url || product.url || product.product_link || product.productUrl || '#', '_blank');
             });
@@ -1156,8 +1156,11 @@ class StyleAI {
             messageInputContainer.style.display = 'none';
         }
         
-        // Clear previous content
+        // Hide chat messages
         chatMessages.style.display = 'none';
+        
+        // Show product grid container
+        productGridContainer.style.display = 'block';
         productGridContainer.innerHTML = '';
         
         if (this.cart.length === 0) {
@@ -1179,39 +1182,37 @@ class StyleAI {
                 <div style="flex: 1; overflow-y: auto; padding-right: 8px; padding-bottom: 20px;">
                     <div class="cart-header">
                         <div>
-                            <p style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Session Cart</p>
-                            <h2 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">Shopping Cart (${this.cart.length})</h2>
+                            <h2 style="font-size: 14px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">Shopping Cart (${this.cart.length})</h2>
                         </div>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="selectAllCart" style="width: 18px; height: 18px;">
-                            <span style="color: #475569; font-weight: 500;">Select All (${this.cart.length})</span>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="selectAllCart" checked style="width: 14px; height: 14px;">
+                            <span style="color: #9ca3af; font-weight: 400; font-size: 11px;">Select All (${this.cart.length})</span>
                         </label>
                     </div>
                     
-                    <div style="background: #fef3c7; border: 1px solid #fde047; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; color: #92400e;">
-                            <span style="font-size: 18px;">▲</span>
-                            <span style="font-weight: 500;">Cart expires when browser closes</span>
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: #ef4444;">
+                            <span style="font-size: 11px; font-weight: 600;">Cart expires when browser closes or refreshes</span>
                         </div>
-                        <p style="color: #a16207; margin: 4px 0 0 26px; font-size: 13px;">Items saved in this session only</p>
+                        <p style="color: #9ca3af; margin: 2px 0 0 0; font-size: 9px;">Items saved in this session only</p>
                     </div>
                     
-                    <div style="background: #dcfce7; border: 1px solid #86efac; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #166534; font-weight: 600;">${this.cart.length} items selected</span>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="styleAI.openAllCartItems()" style="background: #22c55e; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Open All (${this.cart.length} tabs)</button>
-                            <button onclick="styleAI.removeSelectedItems()" style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Remove</button>
+                    <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #22c55e; font-weight: 500; font-size: 11px;">${this.cart.length} items selected</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button onclick="styleAI.openAllCartItems()" style="background: #22c55e; color: white; padding: 5px 10px; border: none; border-radius: 14px; font-weight: 500; cursor: pointer; font-size: 10px;">Open All (${this.cart.length} tabs)</button>
+                            <button onclick="styleAI.removeSelectedItems()" style="background: #ef4444; color: white; padding: 5px 10px; border: none; border-radius: 14px; font-weight: 500; cursor: pointer; font-size: 10px;">Remove</button>
                         </div>
                     </div>
                     
                     <div id="cartItemsList" style="display: flex; flex-direction: column; gap: 16px;"></div>
                 </div>
                 
-                <div style="flex-shrink: 0; background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 50%, #f0f9ff 100%); padding: 24px 0; border-top: 2px solid #e2e8f0; position: sticky; bottom: 0;">
-                    <p style="text-align: center; color: #64748b; margin-bottom: 16px;">
-                        Total estimated: <strong style="color: #1e293b; font-size: 18px;">$${total.toFixed(2)}</strong> (from ${this.cart.length} vendor${this.cart.length > 1 ? 's' : ''})
+                <div style="flex-shrink: 0; background: linear-gradient(135deg, #2d2d2d 0%, #252525 50%, #1f1f1f 100%); padding: 16px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); position: sticky; bottom: 0; display: flex; flex-direction: column; align-items: center;">
+                    <p style="text-align: center; color: #9ca3af; margin-bottom: 12px; font-size: 11px;">
+                        Total estimated: <strong style="color: #e5e7eb; font-size: 14px;">$${total.toFixed(2)}</strong> (from ${this.cart.length} vendor${this.cart.length > 1 ? 's' : ''})
                     </p>
-                    <button onclick="styleAI.openAllCartItems()" style="width: 100%; background: #8b5cf6; color: white; padding: 16px; border: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer;">Open All ${this.cart.length} Items in separate tabs</button>
+                    <button onclick="styleAI.openAllCartItems()" style="width: 40%; background: #8b5cf6; color: white; padding: 12px; border: none; border-radius: 20px; font-weight: 600; font-size: 12px; cursor: pointer;">Open All ${this.cart.length} Items in separate tabs</button>
                 </div>
             </div>
         `;
@@ -1224,29 +1225,29 @@ class StyleAI {
             const itemTotal = parseFloat(item.price || 0);
             
             const cartItem = document.createElement('div');
-            cartItem.style.cssText = 'border: 2px solid #8b5cf6; border-radius: 12px; padding: 16px; background: white;';
+            cartItem.style.cssText = 'border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 12px; background: rgba(255, 255, 255, 0.02);';
             
             const imageUrl = item.image_url || item.imageUrl || '';
             const imageColor = item.imageColor || '#d9e8ff';
             
             cartItem.innerHTML = `
-                <div style="display: flex; gap: 16px; align-items: start;">
-                    <input type="checkbox" class="cart-item-checkbox" style="width: 20px; height: 20px; margin-top: 4px;">
-                    <div class="cart-item-image" style="width: 80px; height: 80px; min-width: 80px; border-radius: 8px; background-color: ${imageColor}; ${imageUrl ? `background-image: url(${imageUrl}); background-size: cover; background-position: center;` : ''}"></div>
+                <div style="display: flex; gap: 12px; align-items: start;">
+                    <input type="checkbox" class="cart-item-checkbox" checked style="width: 14px; height: 14px; margin-top: 2px;">
+                    <div class="cart-item-image" style="width: 60px; height: 60px; min-width: 60px; border-radius: 6px; background-color: ${imageColor}; ${imageUrl ? `background-image: url(${imageUrl}); background-size: cover; background-position: center;` : ''}"></div>
                     <div style="flex: 1;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                             <div>
-                                <div style="font-size: 15px; color: #475569; margin-bottom: 2px; font-weight: 500;">${item.name}</div>
-                                <div style="font-size: 12px; color: #64748b;">${item.vendor || item.brand || 'Vendor'}</div>
+                                <div style="font-size: 11px; color: #e5e7eb; margin-bottom: 2px; font-weight: 500;">${item.name}</div>
+                                <div style="font-size: 9px; color: #9ca3af;">${item.vendor || item.brand || 'Vendor'}</div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-weight: 700; font-size: 18px; color: #1e293b;">$${this.formatPrice(item.price)}</div>
+                                <div style="font-weight: 700; font-size: 13px; color: #e5e7eb;">$${this.formatPrice(item.price)}</div>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Added ${addedTime}</div>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="styleAI.openCartItem('${item.vendorUrl}')" style="background: #8b5cf6; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Open Link →</button>
-                            <button onclick="styleAI.removeFromCart('${item.id}')" style="background: #ef4444; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 18px;">×</button>
+                        <div style="font-size: 9px; color: #9ca3af; margin-bottom: 8px;">Added ${addedTime}</div>
+                        <div style="display: flex; gap: 6px;">
+                            <button onclick="styleAI.openCartItem('${item.vendorUrl}')" style="background: #8b5cf6; color: white; padding: 4px 10px; border: none; border-radius: 12px; font-weight: 500; cursor: pointer; font-size: 10px;">Open Link →</button>
+                            <button onclick="styleAI.removeFromCart('${item.id}')" style="background: #ef4444; color: white; padding: 4px 10px; border: none; border-radius: 12px; cursor: pointer; font-size: 14px;">×</button>
                         </div>
                     </div>
                 </div>
