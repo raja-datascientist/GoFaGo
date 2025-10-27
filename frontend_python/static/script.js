@@ -1077,15 +1077,22 @@ class StyleAI {
     }
     
     async openAllCartItems() {
+        console.log('Open All button clicked, cart items:', this.cart);
         let openedCount = 0;
         
         for (const item of this.cart) {
+            console.log('Processing cart item:', item);
+            console.log('vendorUrl:', item.vendorUrl);
+            
             if (item.vendorUrl && item.vendorUrl !== '#') {
+                console.log('Opening URL:', item.vendorUrl);
                 window.open(item.vendorUrl, '_blank');
                 openedCount++;
                 
                 // Add a small delay between opening tabs to avoid browser blocking
-                await new Promise(resolve => setTimeout(resolve, 200));
+                await new Promise(resolve => setTimeout(resolve, 300));
+            } else {
+                console.log('Skipping item with no valid URL');
             }
         }
         
