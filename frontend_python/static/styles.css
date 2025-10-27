@@ -253,6 +253,9 @@ body {
     flex-direction: column;
     padding: 24px;
     overflow: hidden;
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 50%, #e9d5ff 100%);
+    border-radius: 12px;
+    margin: 8px;
 }
 
 .chat-scrollable-area {
@@ -314,9 +317,10 @@ body {
 }
 
 .ai-message {
-    background: #f1f5f9;
+    background: white;
     color: #475569;
     align-self: flex-start;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .chat-header {
