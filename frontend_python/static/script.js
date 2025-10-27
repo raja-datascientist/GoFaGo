@@ -43,14 +43,11 @@ class StyleAI {
     }
 
     init() {
+        // Clear all session data on page load/refresh
+        this.resetSession();
+        
         this.setupEventListeners();
         this.updateCartBadge();
-        
-        // Clear old favorites from localStorage to remove any static data
-        localStorage.removeItem('styleai_session_favorites');
-        this.favorites = [];
-        this.saveFavorites();
-        
         this.updateFavoritesBadge();
         this.updateSearchSessions();
         this.setupPageRefreshWarning();
@@ -59,6 +56,28 @@ class StyleAI {
         if (this.conversationHistory && this.conversationHistory.length > 0) {
             this.displayConversationHistory();
         }
+    }
+    
+    resetSession() {
+        // Clear all session data from localStorage
+        localStorage.removeItem('styleai_session_cart');
+        localStorage.removeItem('styleai_session_favorites');
+        localStorage.removeItem('styleai_search_sessions');
+        localStorage.removeItem('styleai_search_history');
+        
+        // Reset instance variables
+        this.cart = [];
+        this.favorites = [];
+        this.searchSessions = [];
+        this.conversationHistory = [];
+        this.currentSearchContext = null;
+        this.productsData = null;
+        this.currentSessionId = null;
+        
+        // Save cleared state
+        this.saveCart();
+        this.saveFavorites();
+        this.saveSessions();
     }
     
     displayConversationHistory() {
@@ -96,8 +115,7 @@ class StyleAI {
             this.displayProducts(this.productsData);
         }
         
-        // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        this.autoScroll();
     }
 
     setupPageRefreshWarning() {
@@ -413,7 +431,11 @@ class StyleAI {
 
     displayProducts(products) {
         const chatMessages = document.getElementById('chatMessages');
-        const productGridContainer = document.getElementById('productGridContainer');
+        
+        // Don't do anything if no products provided or empty array
+        if (!products || products.length === 0) {
+            return;
+        }
         
         // Store products for modal and recommendations
         this.productsData = products;
@@ -426,19 +448,32 @@ class StyleAI {
         // Save products to current session
         this.saveCurrentSession();
         
-        // Create product grid
-        productGridContainer.innerHTML = '<div class="product-grid" id="productGrid"></div>';
-        const productGrid = document.getElementById('productGrid');
+        // Remove existing product grid if it exists
+        const existingProductGrid = document.getElementById('productGrid');
+        if (existingProductGrid) {
+            existingProductGrid.remove();
+        }
         
-        productGrid.innerHTML = '';
-        
-        products.forEach((product, index) => {
-            const productCard = this.createProductCard(product, index);
-            productGrid.appendChild(productCard);
-        });
-        
-        // Scroll to products
-        productGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Only create and append product grid if there are products
+        if (products && products.length > 0) {
+            // Create product grid container in chat messages
+            const productGridContainer = document.createElement('div');
+            productGridContainer.className = 'product-grid';
+            productGridContainer.id = 'productGrid';
+            
+            productGridContainer.innerHTML = '';
+            
+            products.forEach((product, index) => {
+                const productCard = this.createProductCard(product, index);
+                productGridContainer.appendChild(productCard);
+            });
+            
+            // Append product grid to chat messages container (after all messages)
+            chatMessages.appendChild(productGridContainer);
+            
+            // Auto scroll to bottom after products are added
+            this.autoScroll();
+        }
     }
 
     createProductCard(product, index = 0) {
@@ -449,12 +484,13 @@ class StyleAI {
         card.dataset.productId = productId;
         
         // Use image URL if available, otherwise use color class as fallback
-        const imageUrl = product.image_url || product.imageUrl || '';
+        // Handle both lowercase and uppercase field names from backend
+        const imageUrl = product.image_url || product.imageUrl || product.Image_Url || '';
         const colorClass = product.imageColor || ['blue', 'green', 'pink', 'yellow', 'purple', 'gray'][index % 6];
         
-        const productName = product.name || product.title || 'Product Name';
-        const productBrand = product.brand || 'Brand';
-        const productPrice = this.formatPrice(product.price || product.current_price || '0.00');
+        const productName = product.name || product.title || product.Category || 'Product Name';
+        const productBrand = product.brand || product.Brand || 'Brand';
+        const productPrice = this.formatPrice(product.price || product.current_price || product.Price || '0.00');
         
         // Check if this product is already in favorites
         const isFavorite = this.favorites.some(f => {
@@ -1291,9 +1327,13 @@ class StyleAI {
             messageInputContainer.style.display = 'none';
         }
         
-        // Hide empty state and show content
+        // Hide empty state and chat messages
         document.getElementById('emptyState').style.display = 'none';
         chatMessages.style.display = 'none';
+        
+        // Show product grid container
+        productGridContainer.style.display = 'block';
+        productGridContainer.style.visibility = 'visible';
         
         // Clear previous content
         productGridContainer.innerHTML = '';
@@ -1308,17 +1348,72 @@ class StyleAI {
             return;
         }
         
-        // Display favorites
-        productGridContainer.innerHTML = '<div class="product-grid" id="productGrid"></div>';
-        const productGrid = document.getElementById('productGrid');
+        // Create and display product grid with products
+        const productGridHTML = `
+            <div class="product-grid" id="productGrid">
+                ${this.favorites.map((product, index) => {
+                    const productId = product.id || product.product_id || `product_${index}`;
+                    const imageUrl = product.image_url || product.imageUrl || product.Image_Url || '';
+                    const colorClass = product.imageColor || ['blue', 'green', 'pink', 'yellow', 'purple', 'gray'][index % 6];
+                    const productName = product.name || product.title || product.Category || 'Product Name';
+                    const productBrand = product.brand || product.Brand || 'Brand';
+                    const productPrice = this.formatPrice(product.price || product.current_price || product.Price || '0.00');
+                    const isFavorite = true;
+                    const favoriteIcon = '❤️';
+                    
+                    return `
+                        <div class="product-card" data-product-id="${productId}">
+                            <div class="product-image ${colorClass}" ${imageUrl ? `style="background-image: url(${imageUrl}); background-size: cover; background-position: center;"` : ''}>
+                                <button class="favorite-btn" onclick="styleAI.toggleFavorite('${productId}')">${favoriteIcon}</button>
+                            </div>
+                            <div class="product-info">
+                                <div class="product-brand">${productBrand}</div>
+                                <div class="product-name">${productName}</div>
+                                <div class="product-price">$${productPrice}</div>
+                                <div class="product-actions">
+                                    <button class="action-btn view-btn-action" data-product-id="${productId}" title="Quick View">🔍</button>
+                                    <button class="action-btn add-btn-action" data-product-id="${productId}" title="Add to Cart">🛒</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
         
-        this.favorites.forEach((product, index) => {
-            const productCard = this.createProductCard(product, index);
-            productGrid.appendChild(productCard);
+        productGridContainer.innerHTML = productGridHTML;
+        
+        // Set up event listeners for the new cards
+        const productCards = productGridContainer.querySelectorAll('.product-card');
+        productCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('action-btn') && !e.target.classList.contains('favorite-btn')) {
+                    const productId = card.dataset.productId;
+                    this.openQuickView(productId);
+                }
+            });
         });
         
-        // Scroll to products
-        productGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Set up add to cart buttons
+        const addToCartBtns = productGridContainer.querySelectorAll('.add-btn-action');
+        addToCartBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const productId = btn.dataset.productId;
+                const product = this.favorites.find(p => (p.id || p.product_id) == productId);
+                if (product) {
+                    this.addRecommendedToCart(product);
+                }
+            });
+        });
+        
+        // Set up view buttons
+        const viewBtns = productGridContainer.querySelectorAll('.view-btn-action');
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const productId = btn.dataset.productId;
+                this.openQuickView(productId);
+            });
+        });
     }
 
     showTrendingPage() {
@@ -1335,10 +1430,30 @@ class StyleAI {
 
     showSearchPage() {
         const messageInputContainer = document.querySelector('.message-input-container');
+        const chatMessages = document.getElementById('chatMessages');
+        const productGridContainer = document.getElementById('productGridContainer');
+        
         if (messageInputContainer) {
             messageInputContainer.style.display = 'flex';
         }
-        // Don't clear the current session's content - just enable chat
+        
+        // Show chat messages container
+        if (chatMessages) {
+            chatMessages.style.display = 'flex';
+        }
+        
+        // Hide product grid container (favorites uses this)
+        if (productGridContainer) {
+            productGridContainer.style.display = 'none';
+        }
+        
+        // Remove any empty product grids that might have been accidentally added
+        const productGrids = chatMessages.querySelectorAll('.product-grid');
+        productGrids.forEach(grid => {
+            if (grid.children.length === 0) {
+                grid.remove();
+            }
+        });
     }
 
     applyFilter(filter) {
@@ -1551,7 +1666,8 @@ class StyleAI {
         userMessage.innerHTML = `
             <div class="message-content">${message}</div>
         `;
-        chatMessages.appendChild(userMessage);
+            chatMessages.appendChild(userMessage);
+            this.autoScroll();
         
         // Add user message to conversation history
         this.conversationHistory.push({
@@ -1562,12 +1678,20 @@ class StyleAI {
         // Clear input
         input.value = '';
         
-        // Show loading
+        // Show loading with typing indicator
         const loadingMessage = document.createElement('div');
         loadingMessage.className = 'ai-message';
-        loadingMessage.innerHTML = '<div class="loading-spinner-inline"></div> Searching...';
+        loadingMessage.innerHTML = `
+            <div class="message-content">
+                Searching for the perfect products<span class="blinking-circles">
+                    <span class="circle c1">●</span>
+                    <span class="circle c2">●</span>
+                    <span class="circle c3">●</span>
+                </span>
+            </div>
+        `;
         chatMessages.appendChild(loadingMessage);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        this.autoScroll();
         
         try {
             // Send message to backend with conversation history
@@ -1589,16 +1713,24 @@ class StyleAI {
             // Remove loading message
             loadingMessage.remove();
             
-            // Add AI response
+            // Add AI response with typing animation
             const aiResponse = document.createElement('div');
             aiResponse.className = 'ai-message';
             const aiText = data.message || `I found results for "${message}"! Here are the top picks:`;
+            
+            // Start with empty content
             aiResponse.innerHTML = `
-                <div class="message-content">${aiText}</div>
+                <div class="message-content"></div>
             `;
             chatMessages.appendChild(aiResponse);
             
-            // Add AI response to conversation history
+        // Type out the message character by character
+        await this.typeMessage(aiResponse.querySelector('.message-content'), aiText);
+        
+        // Scroll after typing completes
+        this.autoScroll();
+        
+        // Add AI response to conversation history
             this.conversationHistory.push({
                 role: 'assistant',
                 content: data.message || `I found results for "${message}"! Here are the top picks:`
@@ -1626,11 +1758,14 @@ class StyleAI {
                 this.currentSearchContext.filtersApplied.min_price = parseFloat(minPriceMatch[1]);
             }
             
-            // Load products if available
+            // Load products if available - after typing animation completes
             console.log('Checking products...');
             if (data.products && data.products.length > 0) {
                 console.log('Displaying products from server');
-                this.displayProducts(data.products);
+                // Display products after a short delay to allow typing animation to finish
+                setTimeout(() => {
+                    this.displayProducts(data.products);
+                }, 500);
             } else {
                 console.log('No products in response');
             }
@@ -1673,8 +1808,7 @@ class StyleAI {
             }
         }
         
-
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        this.autoScroll();
     }
 
     startNewSearch() {
@@ -1900,6 +2034,25 @@ class StyleAI {
                 });
                 modalFavoriteBtn.textContent = isFavorite ? '❤️' : '♡';
             }
+        }
+    }
+
+    async typeMessage(element, text) {
+        // Type out text character by character
+        for (let i = 0; i < text.length; i++) {
+            element.textContent = text.substring(0, i + 1);
+            this.autoScroll();
+            await new Promise(resolve => setTimeout(resolve, 20)); // 20ms delay between characters
+        }
+    }
+    
+    autoScroll() {
+        const scrollableArea = document.querySelector('.chat-scrollable-area');
+        if (scrollableArea) {
+            // Use setTimeout to ensure DOM has updated
+            setTimeout(() => {
+                scrollableArea.scrollTop = scrollableArea.scrollHeight;
+            }, 0);
         }
     }
 
