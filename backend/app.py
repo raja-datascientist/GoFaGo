@@ -240,11 +240,18 @@ async def filter_products(
         
         # Convert to list of dictionaries with safe string conversion
         products = []
+        seen_urls = set()  # Track product URLs to avoid duplicates
         for _, row in filtered_df.head(limit).iterrows():
             def safe_str(value):
                 if pd.isna(value) or value is None:
                     return ""
                 return str(value)
+            
+            # Get product URL to check for duplicates
+            product_url = safe_str(row['Product page url'])
+            if not product_url or product_url in seen_urls:
+                continue
+            seen_urls.add(product_url)
             
             # Get brand from productcard_messaging or use first part of Category.1
             category_name = safe_str(row['Category.1'])
@@ -254,6 +261,7 @@ async def filter_products(
                 "id": safe_str(row['ProductID']),  # Use ProductID from CSV
                 "name": safe_str(row['Category']),  # Product brand/name
                 "brand": brand,  # Brand name
+                "vendor": safe_str(row['Vendor']),  # Vendor name
                 "description": category_name,  # Product description
                 "detailed_description": safe_str(row['Detailed description']),
                 "price": safe_str(row['Current Price']),
@@ -482,15 +490,23 @@ async def get_similar_products(
         
         # Convert to list of dictionaries with safe string conversion
         recommendations = []
+        seen_urls = set()  # Track product URLs to avoid duplicates
         for _, row in filtered_df.head(limit).iterrows():
             def safe_str(value):
                 if pd.isna(value) or value is None:
                     return ""
                 return str(value)
             
+            # Get product URL to check for duplicates
+            product_url = safe_str(row['Product page url'])
+            if not product_url or product_url in seen_urls:
+                continue
+            seen_urls.add(product_url)
+            
             product = {
                 "id": len(recommendations) + 1,
                 "name": safe_str(row['Category']),
+                "vendor": safe_str(row['Vendor']),  # Vendor name
                 "description": safe_str(row['Category.1']),
                 "detailed_description": safe_str(row['Detailed description']),
                 "price": safe_str(row['Current Price']),

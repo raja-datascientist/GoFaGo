@@ -501,6 +501,7 @@ class StyleAI {
         
         const productName = product.name || product.title || product.Category || 'Product Name';
         const productBrand = product.brand || product.Brand || 'Brand';
+        const productVendor = product.vendor || product.Vendor || '';
         const productPrice = this.formatPrice(product.price || product.current_price || product.Price || '0.00');
         
         // Check if this product is already in favorites
@@ -518,6 +519,7 @@ class StyleAI {
                 <div class="product-brand">${productBrand}</div>
                 <div class="product-name">${productName}</div>
                 <div class="product-price">$${productPrice}</div>
+                ${productVendor ? `<div class="product-vendor">${productVendor}</div>` : ''}
                 <div class="product-actions">
                     <button class="action-btn view-btn-action" data-product-id="${productId}" title="Quick View">🔍</button>
                     <button class="action-btn add-btn-action" data-product-id="${productId}" title="Add to Cart">🛒</button>
@@ -836,6 +838,7 @@ class StyleAI {
             const imageUrl = product.image_url || product.Image_Url || '';
             const productName = product.name || product.Category || 'Product';
             const productPrice = product.price || product.current_price || '0.00';
+            const productVendor = product.vendor || product.Vendor || '';
             const cleanPrice = this.cleanPrice(productPrice);
             
             const productId = product.id || product.product_id;
@@ -851,7 +854,8 @@ class StyleAI {
                     <button class="favorite-btn-recommendation" data-product-id="${productId}" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #ef4444; transition: all 0.2s ease;">${favoriteIcon}</button>
                 </div>
                 <div style="font-size: 13px; font-weight: 500; color: #1e293b; margin-bottom: 8px; line-height: 1.4; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${productName}</div>
-                <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; flex-grow: 1;">$${cleanPrice}</div>
+                <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">$${cleanPrice}</div>
+                ${productVendor ? `<div style="font-size: 9px; font-weight: 600; color: #8b5cf6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">${productVendor}</div>` : ''}
                 <button class="add-to-cart-recommendation" data-product-id="${productId}" title="Add to Cart" style="width: 36px; height: 36px; background: transparent; border: 1px solid #e2e8f0; color: #64748b; border-radius: 50%; font-size: 18px; font-weight: normal; cursor: pointer; transition: all 0.2s ease; margin-top: auto; display: flex; align-items: center; justify-content: center; padding: 0;">🛒</button>
             `;
             
@@ -1390,6 +1394,7 @@ class StyleAI {
                     const colorClass = product.imageColor || ['blue', 'green', 'pink', 'yellow', 'purple', 'gray'][index % 6];
                     const productName = product.name || product.title || product.Category || 'Product Name';
                     const productBrand = product.brand || product.Brand || 'Brand';
+                    const productVendor = product.vendor || product.Vendor || '';
                     const productPrice = this.formatPrice(product.price || product.current_price || product.Price || '0.00');
                     const isFavorite = true;
                     const favoriteIcon = '❤️';
@@ -1403,6 +1408,7 @@ class StyleAI {
                                 <div class="product-brand">${productBrand}</div>
                                 <div class="product-name">${productName}</div>
                                 <div class="product-price">$${productPrice}</div>
+                                ${productVendor ? `<div class="product-vendor">${productVendor}</div>` : ''}
                                 <div class="product-actions">
                                     <button class="action-btn view-btn-action" data-product-id="${productId}" title="Quick View">🔍</button>
                                     <button class="action-btn add-btn-action" data-product-id="${productId}" title="Add to Cart">🛒</button>

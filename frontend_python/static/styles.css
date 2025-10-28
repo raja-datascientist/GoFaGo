@@ -22,8 +22,8 @@ body {
 
 /* Left Sidebar */
 .sidebar {
-    width: 220px;
-    min-width: 220px;
+    width: 180px;
+    min-width: 180px;
     background: linear-gradient(135deg, #2d2d2d 0%, #252525 50%, #1f1f1f 100%);
     color: #e5e7eb;
     display: flex;
@@ -33,7 +33,7 @@ body {
 }
 
 .sidebar-header {
-    padding: 24px 20px;
+    padding: 20px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -90,24 +90,24 @@ body {
 
 .sidebar-content {
     flex: 1;
-    padding: 20px;
+    padding: 16px;
 }
 
 .session-section,
 .quick-links-section {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
 }
 
 .session-section h3,
 .quick-links-section h3 {
-    font-size: 10px;
+    font-size: 8px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 16px;
     text-align: left;
-    font-family: 'Apple SD Gothic Neo Medium', sans-serif;
+    font-family: 'Libre Baskerville', serif;
 }
 
 .new-search-btn-inline {
@@ -172,14 +172,14 @@ body {
 }
 
 .search-title {
-    font-size: 11px;
+    font-size: 5px;
     font-weight: 300 !important;
     color: #e5e7eb;
     margin-bottom: 1px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: 'Apple Symbols', sans-serif;
+    font-family: 'Libre Baskerville', serif;
 }
 
 .search-item .search-title {
@@ -214,12 +214,12 @@ body {
     border-radius: 8px;
     color: #d1d5db;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 300;
     transition: all 0.2s ease;
     position: relative;
     text-align: left;
-    font-family: 'Apple Symbols', sans-serif;
+    font-family: 'Libre Baskerville', serif;
 }
 
 .quick-link:hover {
@@ -418,7 +418,7 @@ body {
 }
 
 .search-title {
-    font-size: 15px;
+    font-size: 9px;
     font-weight: 700;
     color: #1e293b;
 }
@@ -656,6 +656,15 @@ body {
     margin-bottom: 2px;
 }
 
+.product-vendor {
+    font-size: 7px;
+    font-weight: 600;
+    color: #8b5cf6;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .product-actions {
     display: flex;
     gap: 8px;
@@ -789,7 +798,7 @@ body {
 .refinements-section,
 .complete-look-section,
 .related-searches-section {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
 }
 
 .insights-section h3,
@@ -846,7 +855,7 @@ body {
     border: none;
     padding: 4px 12px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 300;
     color: #e5e7eb;
     cursor: pointer;
@@ -857,7 +866,7 @@ body {
     text-align: left;
     width: 100%;
     text-align: left !important;
-    font-family: 'Apple Symbols', sans-serif;
+    font-family: 'Libre Baskerville', serif;
 }
 
 .refinement-btn span {
@@ -870,13 +879,13 @@ body {
 }
 
 .sidebar .refinements-section h3 {
-    font-size: 10px;
+    font-size: 8px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 16px;
-    font-family: 'Apple SD Gothic Neo Medium', sans-serif;
+    font-family: 'Libre Baskerville', serif;
 }
 
 .arrow {
@@ -1564,7 +1573,7 @@ body {
     }
     
     .search-title {
-        font-size: 10px !important;
+        font-size: 6px !important;
     }
     
     /* Reduce filter chips size */
@@ -1956,6 +1965,11 @@ body {
     
     .product-price {
         font-size: 7px !important;
+    }
+    
+    .product-vendor {
+        font-size: 5px !important;
+        margin-bottom: 2px !important;
     }
     
     .action-btn {
