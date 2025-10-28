@@ -1,3 +1,6 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
 /* Reset and Base Styles */
 * {
     margin: 0;
@@ -38,7 +41,8 @@ body {
 }
 
 .logo h1 {
-    font-size: 28px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 42px;
     font-weight: 900;
     margin-bottom: 6px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
@@ -52,7 +56,8 @@ body {
 }
 
 .tagline {
-    font-size: 7px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 10.5px;
     color: #a78bfa;
     font-weight: 600;
     text-transform: uppercase;
@@ -67,8 +72,9 @@ body {
     border: none;
     padding: 12px 16px;
     border-radius: 8px;
+    font-family: 'Nanum Pen Script', cursive;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 21px;
     margin-top: 20px;
     cursor: pointer;
     display: flex;
@@ -100,14 +106,14 @@ body {
 
 .session-section h3,
 .quick-links-section h3 {
-    font-size: 10px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 15px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 16px;
     text-align: left;
-    font-family: 'Libre Baskerville', serif;
 }
 
 .new-search-btn-inline {
@@ -116,7 +122,8 @@ body {
     color: #94a3b8;
     padding: 4px 8px;
     margin: 0;
-    font-size: 10px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 15px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -172,14 +179,14 @@ body {
 }
 
 .search-title {
-    font-size: 11px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 14px;
     font-weight: 300 !important;
     color: #e5e7eb;
     margin-bottom: 1px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: 'Libre Baskerville', serif;
 }
 
 .search-item .search-title {
@@ -214,12 +221,12 @@ body {
     border-radius: 8px;
     color: #d1d5db;
     text-decoration: none;
-    font-size: 11px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 16.5px;
     font-weight: 300;
     transition: all 0.2s ease;
     position: relative;
     text-align: left;
-    font-family: 'Libre Baskerville', serif;
 }
 
 .quick-link:hover {
@@ -312,7 +319,8 @@ body {
 }
 
 .empty-message h3 {
-    font-size: 18px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 27px;
     font-weight: 800;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
     -webkit-background-clip: text;
@@ -323,7 +331,8 @@ body {
 }
 
 .empty-message p {
-    font-size: 11px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 16.5px;
     color: #64748b;
     line-height: 1.4;
     max-width: 600px;
@@ -418,7 +427,7 @@ body {
 }
 
 .search-title {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 700;
     color: #1e293b;
 }
@@ -847,7 +856,7 @@ body {
 .refinement-options {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
 }
 
 .refinement-btn {
@@ -855,7 +864,8 @@ body {
     border: none;
     padding: 4px 12px;
     border-radius: 8px;
-    font-size: 11px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 16.5px;
     font-weight: 300;
     color: #e5e7eb;
     cursor: pointer;
@@ -866,7 +876,6 @@ body {
     text-align: left;
     width: 100%;
     text-align: left !important;
-    font-family: 'Libre Baskerville', serif;
 }
 
 .refinement-btn span {
@@ -879,13 +888,13 @@ body {
 }
 
 .sidebar .refinements-section h3 {
-    font-size: 10px;
+    font-family: 'Nanum Pen Script', cursive;
+    font-size: 15px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 16px;
-    font-family: 'Libre Baskerville', serif;
 }
 
 .arrow {
@@ -1697,13 +1706,15 @@ body {
     
     /* Reduce logo and banner sizes for mobile */
     .logo h1 {
-        font-size: 12px;
+        font-family: 'Nanum Pen Script', cursive;
+        font-size: 18px;
         margin: 0;
         line-height: 1.2;
     }
     
     .tagline {
-        font-size: 5px;
+        font-family: 'Nanum Pen Script', cursive;
+        font-size: 7.5px;
         margin: 1px 0 0 0;
     }
     
@@ -1722,12 +1733,14 @@ body {
     }
     
     .empty-message h3 {
-        font-size: 14px;
+        font-family: 'Nanum Pen Script', cursive;
+        font-size: 21px;
         margin-bottom: 4px;
     }
     
     .empty-message p {
-        font-size: 11px;
+        font-family: 'Nanum Pen Script', cursive;
+        font-size: 16.5px;
         margin: 0;
     }
     
