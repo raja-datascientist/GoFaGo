@@ -219,6 +219,8 @@ class StyleAI {
                     
                     if (filterToRemove) {
                         this.activeFilters = this.activeFilters.filter(f => f !== filterToRemove);
+                        // Remove refinement button highlight
+                        this.removeRefinementHighlight(filterToRemove);
                     }
                     console.log('Active filters after:', this.activeFilters);
                     
@@ -1553,9 +1555,27 @@ class StyleAI {
         if (!this.activeFilters) {
             this.activeFilters = [];
         }
-        this.activeFilters.push(filter);
         
-        // Add filter chip
+        // Check if filter is already active
+        const isAlreadyActive = this.activeFilters.includes(filter);
+        
+        if (isAlreadyActive) {
+            // Remove filter if already active
+            this.activeFilters = this.activeFilters.filter(f => f !== filter);
+            this.removeFilterChip(filter);
+            this.removeRefinementHighlight(filter);
+        } else {
+            // Add filter if not active
+            this.activeFilters.push(filter);
+            this.addFilterChip(filter, filterText);
+            this.addRefinementHighlight(filter);
+        }
+        
+        // Apply the filter
+        this.applyActiveFilters();
+    }
+    
+    addFilterChip(filter, filterText) {
         const filterChips = document.querySelector('.filter-chips');
         if (filterChips) {
             const chip = document.createElement('div');
@@ -1569,9 +1589,27 @@ class StyleAI {
             // Event handling is done via event delegation in init
             filterChips.appendChild(chip);
         }
-        
-        // Apply the filter
-        this.applyActiveFilters();
+    }
+    
+    removeFilterChip(filter) {
+        const chip = document.querySelector(`.filter-chip[data-filter="${filter}"]`);
+        if (chip) {
+            chip.remove();
+        }
+    }
+    
+    addRefinementHighlight(filter) {
+        const btn = document.querySelector(`.refinement-btn[data-filter="${filter}"]`);
+        if (btn) {
+            btn.classList.add('active');
+        }
+    }
+    
+    removeRefinementHighlight(filter) {
+        const btn = document.querySelector(`.refinement-btn[data-filter="${filter}"]`);
+        if (btn) {
+            btn.classList.remove('active');
+        }
     }
     
     applyActiveFilters() {

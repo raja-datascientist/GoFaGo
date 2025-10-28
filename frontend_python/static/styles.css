@@ -74,8 +74,8 @@ body {
     border-radius: 8px;
     font-family: 'Nanum Pen Script', cursive;
     font-weight: 600;
-    font-size: 21px;
-    margin-top: 20px;
+    font-size: 9px;
+    margin-top: 5px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -123,7 +123,7 @@ body {
     padding: 4px 8px;
     margin: 0;
     font-family: 'Nanum Pen Script', cursive;
-    font-size: 15px;
+    font-size: 11px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -180,7 +180,7 @@ body {
 
 .search-title {
     font-family: 'Nanum Pen Script', cursive;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 300 !important;
     color: #e5e7eb;
     margin-bottom: 1px;
@@ -194,7 +194,10 @@ body {
 }
 
 .search-item.active .search-title {
-    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-weight: 500;
 }
 
@@ -235,8 +238,10 @@ body {
 }
 
 .quick-link.active {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-weight: 500;
 }
 
@@ -248,13 +253,24 @@ body {
 }
 
 .badge {
-    background: #8b5cf6;
-    color: white;
-    font-size: 11px;
+    background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
+    font-size: 15px;
     font-weight: 600;
     padding: 2px 6px;
     border-radius: 10px;
     margin-left: auto;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.quick-link.active .badge {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
 }
 
 /* Main Content */
@@ -427,7 +443,7 @@ body {
 }
 
 .search-title {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: #1e293b;
 }
@@ -773,9 +789,9 @@ body {
 }
 
 .send-btn {
-    background: #8b5cf6;
+    background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
     color: white;
-    border: 1px solid #8b5cf6;
+    border: 1px solid transparent;
     border-left: none;
     padding: 0;
     border-radius: 0 30px 30px 0;
@@ -791,7 +807,8 @@ body {
 }
 
 .send-btn:hover {
-    background: #7c3aed;
+    background: linear-gradient(135deg, #5568d3 0%, #d373ea 100%);
+    transform: translateY(-1px);
 }
 
 /* Right Panel */
@@ -882,9 +899,12 @@ body {
     text-align: left;
 }
 
-.refinement-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+.refinement-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 500;
 }
 
 .sidebar .refinements-section h3 {
