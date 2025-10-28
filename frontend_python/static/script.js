@@ -46,6 +46,9 @@ class StyleAI {
         // Clear all session data on page load/refresh
         this.resetSession();
         
+        // Create a default session when page loads
+        this.createDefaultSession();
+        
         this.setupEventListeners();
         this.updateCartBadge();
         this.updateFavoritesBadge();
@@ -77,6 +80,27 @@ class StyleAI {
         // Save cleared state
         this.saveCart();
         this.saveFavorites();
+        this.saveSessions();
+    }
+
+    createDefaultSession() {
+        // Create a default session when page loads
+        const defaultSession = {
+            id: Date.now().toString(),
+            title: 'New Style',
+            timestamp: Date.now(),
+            conversationHistory: [],
+            products: [],
+            searchContext: null
+        };
+        
+        this.searchSessions.push(defaultSession);
+        this.currentSessionId = defaultSession.id;
+        this.conversationHistory = [];
+        this.currentSearchContext = null;
+        this.productsData = null;
+        
+        // Save to localStorage
         this.saveSessions();
     }
     
@@ -1892,7 +1916,7 @@ class StyleAI {
                 const session = this.searchSessions.find(s => s.id === this.currentSessionId);
                 if (session) {
                     // Set title from first search if not set
-                    if (session.title === 'New Search') {
+                    if (session.title === 'New Style') {
                         session.title = message.length > 30 ? message.substring(0, 30) + '...' : message;
                     }
                     this.saveCurrentSession();
@@ -1929,7 +1953,7 @@ class StyleAI {
         // Create new session
         const newSession = {
             id: Date.now().toString(),
-            title: 'New Search',
+            title: 'New Style',
             timestamp: Date.now(),
             conversationHistory: [],
             products: [],
@@ -1988,7 +2012,7 @@ class StyleAI {
             sessionItem.className = `search-item ${session.id === this.currentSessionId ? 'active' : ''}`;
             sessionItem.dataset.sessionId = session.id;
             
-            const title = session.title || 'New Search';
+            const title = session.title || 'New Style';
             const timeAgo = this.getTimeAgo(session.timestamp);
             
             sessionItem.innerHTML = `
@@ -2055,7 +2079,7 @@ class StyleAI {
         }
         
         // Update header if there's a search
-        if (session.title && session.title !== 'New Search') {
+        if (session.title && session.title !== 'New Style') {
             const searchTitleEl = document.querySelector('.search-title');
             if (searchTitleEl) {
                 searchTitleEl.textContent = session.title;

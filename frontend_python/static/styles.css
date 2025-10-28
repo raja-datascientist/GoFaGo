@@ -907,6 +907,11 @@ body {
     font-weight: 500;
 }
 
+.sidebar .refinements-section {
+    background: transparent;
+    border-right: none;
+}
+
 .sidebar .refinements-section h3 {
     font-family: 'Nanum Pen Script', cursive;
     font-size: 15px;
@@ -1754,14 +1759,35 @@ body {
     
     .empty-message h3 {
         font-family: 'Nanum Pen Script', cursive;
-        font-size: 21px;
+        font-size: 18px;
         margin-bottom: 4px;
     }
     
     .empty-message p {
         font-family: 'Nanum Pen Script', cursive;
-        font-size: 16.5px;
+        font-size: 12px;
         margin: 0;
+    }
+    
+    /* Reduce new search button size for mobile */
+    .new-search-btn-inline {
+        padding: 2px 4px;
+        font-size: 8px;
+    }
+    
+    /* Reduce SMART PICKS and My Wardrobe font sizes to match Styles */
+    .sidebar .refinements-section h3 {
+        font-size: 8px;
+    }
+    
+    .quick-links-section h3 {
+        font-size: 8px;
+    }
+    
+    /* Reduce badge size for mobile */
+    .badge {
+        font-size: 10px;
+        padding: 1px 4px;
     }
     
     /* Reduce message input size */
