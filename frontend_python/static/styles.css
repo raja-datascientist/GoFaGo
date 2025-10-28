@@ -32,6 +32,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -112,13 +113,13 @@ body {
     color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
     text-align: left;
 }
 
 .new-search-btn-inline {
     background: transparent;
-    border: 1px solid #475569;
+    border: none;
     color: #94a3b8;
     padding: 4px 8px;
     margin: 0;
@@ -134,7 +135,6 @@ body {
 }
 
 .new-search-btn-inline:hover {
-    border-color: #64748b;
     color: white;
     background: rgba(100, 116, 139, 0.1);
 }
@@ -322,6 +322,26 @@ body {
 .chat-scrollable-area::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #5568d3 0%, #653b8f 25%, #d373ea 50%, #e03d59 75%, #e8557a 100%);
 }
+
+/* Sidebar scrollbar styles to match chatbot */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #653b8f 25%, #d373ea 50%, #e03d59 75%, #e8557a 100%);
+}
+
 
 .empty-state {
     display: flex;
@@ -919,7 +939,7 @@ body {
     color: #e5e7eb;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
 }
 
 .arrow {
