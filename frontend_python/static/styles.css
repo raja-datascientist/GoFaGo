@@ -172,14 +172,14 @@ body {
 }
 
 .search-title {
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 300 !important;
     color: #e5e7eb;
     margin-bottom: 1px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: 'Andale Mono', 'Courier New', monospace;
+    font-family: 'Apple Symbols', sans-serif;
 }
 
 .search-item .search-title {
@@ -418,7 +418,7 @@ body {
 }
 
 .search-title {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: #1e293b;
 }
