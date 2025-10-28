@@ -100,7 +100,7 @@ body {
 
 .session-section h3,
 .quick-links-section h3 {
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
@@ -172,7 +172,7 @@ body {
 }
 
 .search-title {
-    font-size: 5px;
+    font-size: 11px;
     font-weight: 300 !important;
     color: #e5e7eb;
     margin-bottom: 1px;
@@ -418,7 +418,7 @@ body {
 }
 
 .search-title {
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
     color: #1e293b;
 }
@@ -879,7 +879,7 @@ body {
 }
 
 .sidebar .refinements-section h3 {
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
@@ -1573,7 +1573,7 @@ body {
     }
     
     .search-title {
-        font-size: 6px !important;
+        font-size: 9px !important;
     }
     
     /* Reduce filter chips size */

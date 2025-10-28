@@ -18,8 +18,8 @@ class MCPClient:
         try:
             # Start the MCP server process
             server_params = StdioServerParameters(
-                command="python3",
-                args=["app.py"],
+                command="uv",
+                args=["run", "python", "app.py"],
                 cwd="/Users/srivinothinevadivel/Documents/GoFaGo2/backend"
             )
             
@@ -50,8 +50,8 @@ class MCPClient:
         try:
             # Start the MCP server process
             server_params = StdioServerParameters(
-                command="python3",
-                args=["app.py"],
+                command="uv",
+                args=["run", "python", "app.py"],
                 cwd="/Users/srivinothinevadivel/Documents/GoFaGo2/backend"
             )
             
