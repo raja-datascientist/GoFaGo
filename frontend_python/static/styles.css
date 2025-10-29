@@ -220,7 +220,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     padding: 6px 12px;
     border-radius: 8px;
     color: #d1d5db;
@@ -265,7 +265,7 @@ body {
     -webkit-text-fill-color: #e2e8f0 !important;
     background-clip: initial !important;
     -webkit-background-clip: initial !important;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     padding: 1px 4px;
     border-radius: 8px;
@@ -1620,6 +1620,7 @@ body {
     .quick-link {
         padding: 4px 6px;
         font-size: 11px;
+        gap: 6px;
     }
     
     /* Reduce all sidebar section headers */
@@ -1827,7 +1828,7 @@ body {
     
     /* Reduce badge size for mobile */
     .badge {
-        font-size: 8px;
+        font-size: 10px;
         padding: 1px 3px;
         font-weight: 700;
         font-family: 'Cormorant Garamond', serif;
@@ -1835,7 +1836,7 @@ body {
         color: #e2e8f0 !important;
         position: absolute;
         top: -6px;
-        right: -6px;
+        right: -2px;
         min-width: 12px;
         height: 12px;
         display: flex;
