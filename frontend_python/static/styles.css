@@ -317,19 +317,21 @@ body {
     width: 48px;
     height: 36px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.2);
+    background: transparent;
     transition: all 0.2s ease;
     text-decoration: none;
 }
 
 .banner-link:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: transparent;
     transform: scale(1.05);
 }
 
 .banner-link.active {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
+    width: 46px;
+    height: 29px;
 }
 
 .banner-link.active .banner-icon {
@@ -341,18 +343,20 @@ body {
     color: white !important;
     text-shadow: none;
     font-weight: 700;
+    top: -2px;
+    right: -2px;
 }
 
 .banner-icon {
-    font-size: 20px;
+    font-size: 24px;
     color: white;
     filter: brightness(1.5) contrast(1.2);
 }
 
 .banner-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -2px;
+    right: -2px;
     background: transparent;
     color: white !important;
     font-size: 11px;
@@ -1967,14 +1971,18 @@ body {
         font-size: 11px;
     }
     
-    .banner-link {
-        width: 32px;
-        height: 28px;
-        border-radius: 6px;
+    .banner-link.active .banner-badge {
+        top: -1px;
+        right: -1px;
+    }
+    
+    .banner-link.active {
+        width: 31px;
+        height: 22px;
     }
     
     .banner-icon {
-        font-size: 16px;
+        font-size: 19px;
     }
     
     .banner-badge {
@@ -1982,8 +1990,8 @@ body {
         padding: 1px 3px;
         min-width: 10px;
         height: 10px;
-        top: 1px;
-        right: 1px;
+        top: -1px;
+        right: -1px;
         background: transparent;
         color: white !important;
     }
