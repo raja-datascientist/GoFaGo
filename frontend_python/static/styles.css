@@ -298,13 +298,14 @@ body {
     padding: 4px 16px;
     z-index: 100;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
+    padding-left: 75%;
 }
 
 .banner-icons {
     display: flex;
-    gap: 8px;
+    gap: 16px;
     align-items: center;
 }
 
@@ -313,16 +314,21 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
+    width: 48px;
     height: 36px;
-    border-radius: 50%;
-    background: transparent;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
     transition: all 0.2s ease;
     text-decoration: none;
 }
 
+.banner-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
 .banner-link.active {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.4);
     transform: scale(1.1);
 }
 
@@ -334,20 +340,21 @@ body {
 .banner-link.active .banner-badge {
     color: white !important;
     text-shadow: none;
+    font-weight: 700;
 }
 
 .banner-icon {
-    font-size: 16px;
+    font-size: 20px;
     color: white;
     filter: brightness(1.5) contrast(1.2);
 }
 
 .banner-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: 2px;
+    right: 2px;
     background: transparent;
-    color: #e2e8f0 !important;
+    color: white !important;
     font-size: 11px;
     font-weight: 700;
     padding: 1px 4px;
@@ -1596,7 +1603,10 @@ body {
 
 /* Toast Notification */
 .toast {
-    position: relative;
+    position: absolute;
+    left: calc(75% - 160px);
+    top: 50%;
+    transform: translateY(-50%);
     background: transparent;
     color: white;
     padding: 4px 8px;
@@ -1606,7 +1616,6 @@ body {
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
     box-shadow: none;
-    transform: translateY(-10px);
     opacity: 0;
     visibility: hidden;
     transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
@@ -1621,7 +1630,7 @@ body {
 }
 
 .toast.show {
-    transform: translateY(0);
+    transform: translateY(-50%) translateX(10px);
     opacity: 1;
     visibility: visible;
 }
@@ -1949,15 +1958,22 @@ body {
     /* Sticky Banner Mobile */
     .sticky-banner {
         padding: 3px 12px;
+        padding-left: 70%;
+    }
+    
+    /* Toast Mobile */
+    .toast {
+        left: calc(70% - 140px);
     }
     
     .banner-link {
-        width: 32px;
+        width: 40px;
         height: 32px;
+        border-radius: 6px;
     }
     
     .banner-icon {
-        font-size: 14px;
+        font-size: 18px;
     }
     
     .banner-badge {
@@ -1965,10 +1981,10 @@ body {
         padding: 1px 3px;
         min-width: 12px;
         height: 12px;
-        top: -3px;
-        right: -3px;
+        top: 1px;
+        right: 1px;
         background: transparent;
-        color: #e2e8f0 !important;
+        color: white !important;
     }
     
     /* Reduce badge size for mobile */
