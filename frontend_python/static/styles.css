@@ -332,7 +332,7 @@ body.day-mode {
 }
 
 body.day-mode .sidebar {
-    background: linear-gradient(135deg, #fefefe 0%, #f8fafc 50%, #f1f5f9 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
     color: #1e293b;
     border-right: none;
 }
@@ -342,11 +342,11 @@ body.day-mode .sidebar-header {
 }
 
 body.day-mode .center-panel {
-    background: linear-gradient(135deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%);
 }
 
 body.day-mode .chat-container {
-    background: linear-gradient(135deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%);
 }
 
 body.day-mode .empty-message h3 {
@@ -398,7 +398,7 @@ body.day-mode .refinement-btn {
 }
 
 body.day-mode .refinement-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.15);
     color: #000000;
 }
 
@@ -408,15 +408,15 @@ body.day-mode .new-search-btn-inline {
 
 body.day-mode .new-search-btn-inline:hover {
     color: #000000;
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.15);
 }
 
 body.day-mode .search-item:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.15);
 }
 
 body.day-mode .search-item.active {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 body.day-mode .search-item .search-title {
@@ -475,7 +475,7 @@ body.day-mode .quick-link {
 }
 
 body.day-mode .quick-link:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.15);
     color: #000000;
 }
 
@@ -621,7 +621,7 @@ body.day-mode .cart-summary .summary-value {
 }
 
 body.day-mode .sticky-banner {
-    background: linear-gradient(135deg, #fefefe 0%, #f8fafc 50%, #f1f5f9 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%);
     border-bottom: none;
 }
 
@@ -629,7 +629,7 @@ body.day-mode .sticky-banner {
 .sticky-banner {
     position: sticky;
     top: 0;
-    background: linear-gradient(135deg, #2d2d2d 0%, #252525 50%, #1f1f1f 100%);
+    background: linear-gradient(135deg, #383838 0%, #313131 50%, #2b2b2b 100%);
     border-bottom: none;
     padding: 4px 16px;
     z-index: 100;
