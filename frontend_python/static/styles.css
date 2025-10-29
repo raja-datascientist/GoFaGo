@@ -34,12 +34,12 @@ body {
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: none;
 }
 
 .sidebar-header {
     padding: 20px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
 }
 
 .logo h1 {
@@ -289,11 +289,347 @@ body {
     -webkit-background-clip: initial !important;
 }
 
-/* Sticky Banner */
+/* Theme Toggle */
+.theme-toggle-container {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+}
+
+.theme-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 8px;
+    width: 38px;
+    height: 29px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.theme-icon {
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover .theme-icon {
+    transform: rotate(180deg);
+}
+
+/* Day Mode Styles */
+body.day-mode {
+    background: #f8fafc;
+    color: #1a1a1a;
+}
+
+body.day-mode .sidebar {
+    background: linear-gradient(135deg, #fefefe 0%, #f8fafc 50%, #f1f5f9 100%);
+    color: #1e293b;
+    border-right: none;
+}
+
+body.day-mode .sidebar-header {
+    border-bottom: none;
+}
+
+body.day-mode .center-panel {
+    background: linear-gradient(135deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+}
+
+body.day-mode .chat-container {
+    background: linear-gradient(135deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+}
+
+body.day-mode .empty-message h3 {
+    background: linear-gradient(135deg, #1e293b 0%, #475569 25%, #64748b 50%, #94a3b8 75%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body.day-mode .empty-message p {
+    color: #475569;
+}
+
+body.day-mode .user-message .message-content {
+    background: #f1f5f9;
+    color: #000000;
+    border-right: 2px solid #10b981;
+}
+
+body.day-mode .ai-message .message-content {
+    background: #f8fafc;
+    color: #000000;
+    border-left: 2px solid #8b5cf6;
+}
+
+body.day-mode .message-input {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #000000;
+}
+
+body.day-mode .message-input:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+body.day-mode .session-section h3,
+body.day-mode .quick-links-section h3,
+body.day-mode .refinements-section h3 {
+    color: #000000;
+}
+
+body.day-mode .tagline {
+    color: #000000;
+}
+
+body.day-mode .refinement-btn {
+    color: #000000;
+}
+
+body.day-mode .refinement-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #000000;
+}
+
+body.day-mode .new-search-btn-inline {
+    color: #000000;
+}
+
+body.day-mode .new-search-btn-inline:hover {
+    color: #000000;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.day-mode .search-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.day-mode .search-item.active {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body.day-mode .search-item .search-title {
+    background: linear-gradient(135deg, #6b21a8 0%, #7c3aed 25%, #8b5cf6 50%, #a855f7 75%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Override search-title color in day mode */
+body.day-mode .search-title {
+    color: #be185d !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+}
+
+/* Comprehensive Product Tile Day Mode Overrides */
+body.day-mode #productGridContainer .product-name {
+    color: #000000 !important;
+}
+
+body.day-mode #productGridContainer .product-price {
+    color: #000000 !important;
+}
+
+body.day-mode #productGridContainer .product-vendor {
+    color: #000000 !important;
+}
+
+body.day-mode #productGridContainer h2 {
+    color: #000000 !important;
+}
+
+body.day-mode #productGridContainer p {
+    color: #000000 !important;
+}
+
+body.day-mode #productGridContainer * {
+    color: #000000 !important;
+}
+
+body.day-mode .search-item.active .search-title {
+    background: linear-gradient(135deg, #6b21a8 0%, #7c3aed 25%, #8b5cf6 50%, #a855f7 75%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 600;
+}
+
+body.day-mode .search-meta {
+    color: #000000;
+}
+
+body.day-mode .quick-link {
+    color: #000000;
+}
+
+body.day-mode .quick-link:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #000000;
+}
+
+body.day-mode .banner-icon {
+    color: #000000;
+    filter: brightness(0.8) contrast(1.2);
+}
+
+body.day-mode .banner-badge {
+    color: #000000 !important;
+}
+
+body.day-mode .toast {
+    color: #000000;
+}
+
+body.day-mode .theme-toggle {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body.day-mode .theme-toggle:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Day Mode Active Icon Highlight */
+body.day-mode .banner-link.active {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+    width: 38px;
+    height: 29px;
+}
+
+body.day-mode .banner-link.active .banner-icon {
+    filter: brightness(1.2) contrast(1.4);
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+body.day-mode .banner-link.active .banner-badge {
+    color: #000000 !important;
+    text-shadow: none;
+    font-weight: 700;
+    top: -2px;
+    right: -2px;
+}
+
+/* Cart Page Day Mode */
+body.day-mode .cart-header h2 {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-header .subheader {
+    color: #000000 !important;
+}
+
+body.day-mode .product-card .product-title {
+    color: #000000 !important;
+}
+
+body.day-mode .product-card .product-price {
+    color: #000000 !important;
+}
+
+body.day-mode .product-card .product-description {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-summary h3 {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-summary .total-price {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-empty h3 {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-empty p {
+    color: #000000 !important;
+}
+
+body.day-mode .quantity-controls button {
+    color: #000000 !important;
+}
+
+body.day-mode .remove-item-btn {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-item-info h4 {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-item-info p {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-item-price {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-item-actions button {
+    color: #000000 !important;
+}
+
+/* Product Tile Day Mode */
+body.day-mode .product-name {
+    color: #000000 !important;
+}
+
+body.day-mode .product-price {
+    color: #000000 !important;
+}
+
+body.day-mode .product-vendor {
+    color: #000000 !important;
+}
+
+body.day-mode .modal-right .product-name {
+    color: #000000 !important;
+}
+
+body.day-mode .modal-right .product-price {
+    color: #000000 !important;
+}
+
+/* Additional Cart Summary Elements */
+body.day-mode .cart-summary * {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-summary .summary-item {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-summary .summary-label {
+    color: #000000 !important;
+}
+
+body.day-mode .cart-summary .summary-value {
+    color: #000000 !important;
+}
+
+body.day-mode .sticky-banner {
+    background: linear-gradient(135deg, #fefefe 0%, #f8fafc 50%, #f1f5f9 100%);
+    border-bottom: none;
+}
+
+/* Night Mode Sticky Banner */
 .sticky-banner {
     position: sticky;
     top: 0;
-    background: transparent;
+    background: linear-gradient(135deg, #2d2d2d 0%, #252525 50%, #1f1f1f 100%);
     border-bottom: none;
     padding: 4px 16px;
     z-index: 100;
@@ -1966,6 +2302,22 @@ body {
         padding-left: 65%;
     }
     
+    /* Theme Toggle Mobile */
+    .theme-toggle-container {
+        top: 4px;
+        left: 4px;
+    }
+    
+    /* Theme Toggle Mobile */
+    .theme-toggle {
+        width: 26px;
+        height: 22px;
+    }
+    
+    .theme-icon {
+        font-size: 14px;
+    }
+    
     /* Toast Mobile */
     .toast {
         left: calc(65% - 160px);
@@ -1980,6 +2332,17 @@ body {
     .banner-link.active {
         width: 31px;
         height: 22px;
+    }
+    
+    /* Day Mode Mobile Active Icon Highlight */
+    body.day-mode .banner-link.active {
+        width: 26px;
+        height: 22px;
+    }
+    
+    body.day-mode .banner-link.active .banner-badge {
+        top: -1px;
+        right: -1px;
     }
     
     .banner-icon {

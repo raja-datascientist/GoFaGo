@@ -42,12 +42,55 @@ class StyleAI {
         return cleanPrice.toFixed(2);
     }
 
+    initThemeToggle() {
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('.theme-icon');
+        
+        // Load saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'night';
+        this.setTheme(savedTheme);
+        
+        // Update icon based on current theme
+        this.updateThemeIcon(themeIcon, savedTheme);
+        
+        // Add click event listener
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.body.classList.contains('day-mode') ? 'day' : 'night';
+            const newTheme = currentTheme === 'night' ? 'day' : 'night';
+            
+            this.setTheme(newTheme);
+            this.updateThemeIcon(themeIcon, newTheme);
+            
+            // Save theme preference
+            localStorage.setItem('theme', newTheme);
+        });
+    }
+    
+    setTheme(theme) {
+        if (theme === 'day') {
+            document.body.classList.add('day-mode');
+        } else {
+            document.body.classList.remove('day-mode');
+        }
+    }
+    
+    updateThemeIcon(icon, theme) {
+        if (theme === 'day') {
+            icon.textContent = '☀️';
+        } else {
+            icon.textContent = '🌙';
+        }
+    }
+
     init() {
         // Clear all session data on page load/refresh
         this.resetSession();
         
         // Create a default session when page loads
         this.createDefaultSession();
+        
+        // Initialize theme toggle
+        this.initThemeToggle();
         
         this.setupEventListeners();
         this.updateCartBadge();
