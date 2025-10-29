@@ -1301,9 +1301,6 @@ class StyleAI {
             <div id="cartView" style="display: flex; flex-direction: column; height: 100%; position: relative;">
                 <div style="flex: 1; overflow-y: auto; padding-right: 8px; padding-bottom: 20px;">
                     <div class="cart-header">
-                        <div>
-                            <h2 style="font-size: 14px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">Shopping Cart (${this.cart.length})</h2>
-                        </div>
                         <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="checkbox" id="selectAllCart" checked style="width: 14px; height: 14px;">
                             <span style="color: #9ca3af; font-weight: 400; font-size: 11px;">Select All (${this.cart.length})</span>
@@ -1311,10 +1308,7 @@ class StyleAI {
                     </div>
                     
                     <div style="margin-bottom: 12px;">
-                        <div style="display: flex; align-items: center; gap: 6px; color: #ef4444;">
-                            <span style="font-size: 11px; font-weight: 600;">Cart expires when browser closes or refreshes</span>
-                        </div>
-                        <p style="color: #9ca3af; margin: 2px 0 0 0; font-size: 9px;">Items saved in this session only</p>
+                        <p class="cart-expiration-message" style="margin: 0; font-size: 14px; font-family: 'Cormorant Garamond', serif; font-weight: 400;">Your cart is temporary and will be cleared when you close or refresh your browser. Items are saved only for this session.</p>
                     </div>
                     
                     <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">

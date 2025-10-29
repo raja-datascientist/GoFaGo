@@ -500,6 +500,20 @@ body.day-mode .theme-toggle:hover {
     background: rgba(0, 0, 0, 0.2);
 }
 
+/* Cart Message Red Color for Both Themes */
+.cart-expiration-message {
+    color: #ef4444 !important;
+}
+
+body.day-mode .cart-expiration-message {
+    color: #ef4444 !important;
+}
+
+/* Override universal selector for cart message */
+body.day-mode #productGridContainer .cart-expiration-message {
+    color: #ef4444 !important;
+}
+
 /* Day Mode Active Icon Highlight */
 body.day-mode .banner-link.active {
     background: rgba(0, 0, 0, 0.2);
