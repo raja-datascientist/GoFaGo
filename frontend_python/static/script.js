@@ -170,6 +170,15 @@ class StyleAI {
             });
         });
 
+        // Sticky Banner Links navigation
+        document.querySelectorAll('.banner-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = e.currentTarget.dataset.page;
+                this.navigateToPage(page);
+            });
+        });
+
         // Search history navigation
         document.querySelectorAll('.search-item').forEach(item => {
             item.addEventListener('click', () => {
@@ -2141,16 +2150,30 @@ class StyleAI {
     }
 
     updateCartBadge() {
+        // Update old sidebar badge
         const badge = document.querySelector('[data-page="cart"] .badge');
         if (badge) {
             badge.textContent = this.cart.length;
         }
+        
+        // Update sticky banner cart badge
+        const bannerCartBadge = document.querySelector('.banner-link[data-page="cart"] .banner-badge');
+        if (bannerCartBadge) {
+            bannerCartBadge.textContent = this.cart.length;
+        }
     }
 
     updateFavoritesBadge() {
+        // Update old sidebar badge
         const badge = document.querySelector('[data-page="favorites"] .badge');
         if (badge) {
             badge.textContent = this.favorites.length;
+        }
+        
+        // Update sticky banner favorites badge
+        const bannerFavoritesBadge = document.querySelector('.banner-link[data-page="favorites"] .banner-badge');
+        if (bannerFavoritesBadge) {
+            bannerFavoritesBadge.textContent = this.favorites.length;
         }
     }
     

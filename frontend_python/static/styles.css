@@ -272,8 +272,8 @@ body {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     font-family: 'Cormorant Garamond', serif;
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: -6px;
+    right: -4px;
     min-width: 16px;
     height: 16px;
     display: flex;
@@ -287,6 +287,69 @@ body {
     -webkit-text-fill-color: white !important;
     background-clip: initial !important;
     -webkit-background-clip: initial !important;
+}
+
+/* Sticky Banner */
+.sticky-banner {
+    position: sticky;
+    top: 0;
+    background: transparent;
+    border-bottom: none;
+    padding: 4px 16px;
+    z-index: 100;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.banner-icons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.banner-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.banner-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.banner-icon {
+    font-size: 16px;
+    color: white;
+    filter: brightness(1.5) contrast(1.2);
+}
+
+.banner-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: transparent;
+    color: #e2e8f0 !important;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 8px;
+    min-width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    z-index: 10;
 }
 
 /* Main Content */
@@ -1814,16 +1877,45 @@ body {
     /* Reduce new search button size for mobile */
     .new-search-btn-inline {
         padding: 2px 4px;
-        font-size: 12px;
+        font-size: 8px;
     }
     
     /* Reduce SMART PICKS and My Wardrobe font sizes to match Styles */
     .sidebar .refinements-section h3 {
-        font-size: 12px;
+        font-size: 8px;
     }
     
     .quick-links-section h3 {
-        font-size: 12px;
+        font-size: 8px;
+    }
+    
+    .session-section h3 {
+        font-size: 8px;
+    }
+    
+    /* Sticky Banner Mobile */
+    .sticky-banner {
+        padding: 3px 12px;
+    }
+    
+    .banner-link {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .banner-icon {
+        font-size: 14px;
+    }
+    
+    .banner-badge {
+        font-size: 10px;
+        padding: 1px 3px;
+        min-width: 12px;
+        height: 12px;
+        top: -3px;
+        right: -3px;
+        background: transparent;
+        color: #e2e8f0 !important;
     }
     
     /* Reduce badge size for mobile */
@@ -1835,8 +1927,8 @@ body {
         background: transparent;
         color: #e2e8f0 !important;
         position: absolute;
-        top: -6px;
-        right: -2px;
+        top: -4px;
+        right: -1px;
         min-width: 12px;
         height: 12px;
         display: flex;
