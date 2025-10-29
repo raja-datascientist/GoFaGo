@@ -121,7 +121,7 @@ body {
 .new-search-btn-inline {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: white;
     padding: 4px 8px;
     margin: 0;
     font-family: 'Cormorant Garamond', serif;
@@ -1939,20 +1939,20 @@ body {
     /* Reduce new search button size for mobile */
     .new-search-btn-inline {
         padding: 2px 4px;
-        font-size: 8px;
+        font-size: 7px;
     }
     
     /* Reduce SMART PICKS and My Wardrobe font sizes to match Styles */
     .sidebar .refinements-section h3 {
-        font-size: 8px;
+        font-size: 7px;
     }
     
     .quick-links-section h3 {
-        font-size: 8px;
+        font-size: 7px;
     }
     
     .session-section h3 {
-        font-size: 8px;
+        font-size: 7px;
     }
     
     /* Sticky Banner Mobile */
