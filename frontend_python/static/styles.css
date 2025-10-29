@@ -1,5 +1,6 @@
 /* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap');
 
 /* Reset and Base Styles */
 * {
@@ -42,8 +43,8 @@ body {
 }
 
 .logo h1 {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 21px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 23px;
     font-weight: 900;
     margin-bottom: 6px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
@@ -57,10 +58,10 @@ body {
 }
 
 .tagline {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 5.25px;
-    color: #a78bfa;
-    font-weight: 600;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 7px;
+    color: #e2e8f0;
+    font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     text-shadow: 0 2px 4px rgba(167, 139, 250, 0.3);
@@ -73,9 +74,9 @@ body {
     border: none;
     padding: 12px 16px;
     border-radius: 8px;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Cormorant Garamond', serif;
     font-weight: 600;
-    font-size: 4.5px;
+    font-size: 6.5px;
     margin-top: 5px;
     cursor: pointer;
     display: flex;
@@ -107,8 +108,8 @@ body {
 
 .session-section h3,
 .quick-links-section h3 {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 7.5px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 9.5px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
@@ -123,8 +124,8 @@ body {
     color: #94a3b8;
     padding: 4px 8px;
     margin: 0;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 7.5px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 9.5px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -179,8 +180,8 @@ body {
 }
 
 .search-title {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 9px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
     font-weight: 300 !important;
     color: #e5e7eb;
     margin-bottom: 1px;
@@ -218,18 +219,22 @@ body {
 .quick-link {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     gap: 12px;
     padding: 6px 12px;
     border-radius: 8px;
     color: #d1d5db;
     text-decoration: none;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 8.25px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 10.25px;
     font-weight: 300;
     transition: all 0.2s ease;
     position: relative;
     text-align: left;
+}
+
+.quick-link .link-icon {
+    order: 2;
 }
 
 .quick-link:hover {
@@ -248,22 +253,33 @@ body {
 .link-icon {
     font-size: 16px;
     width: 20px;
-    text-align: left;
+    text-align: center;
     flex-shrink: 0;
+    position: relative;
+    order: 2;
 }
 
 .badge {
-    background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
-    color: white !important;
-    -webkit-text-fill-color: white !important;
+    background: transparent;
+    color: #e2e8f0 !important;
+    -webkit-text-fill-color: #e2e8f0 !important;
     background-clip: initial !important;
     -webkit-background-clip: initial !important;
-    font-size: 7.5px;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-left: auto;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 8px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    font-family: 'Cormorant Garamond', serif;
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
 }
 
 .quick-link.active .badge {
@@ -355,8 +371,8 @@ body {
 }
 
 .empty-message h3 {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 13.5px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15.5px;
     font-weight: 800;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
     -webkit-background-clip: text;
@@ -367,9 +383,9 @@ body {
 }
 
 .empty-message p {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 8.25px;
-    color: #64748b;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12.25px;
+    color: #e2e8f0;
     line-height: 1.4;
     max-width: 600px;
     margin: 0 auto;
@@ -434,8 +450,8 @@ body {
     padding: 6px 10px;
     border-radius: 12px;
     line-height: 1.4;
-    font-size: 12px;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-family: 'Cormorant Garamond', serif;
     font-weight: 400;
 }
 
@@ -463,7 +479,7 @@ body {
 }
 
 .search-title {
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
     color: #1e293b;
 }
@@ -801,6 +817,8 @@ body {
     transition: all 0.2s ease;
     min-height: 52px;
     background: white;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
 }
 
 .message-input:focus {
@@ -901,8 +919,8 @@ body {
     border: none;
     padding: 4px 12px;
     border-radius: 8px;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 8.25px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 10.25px;
     font-weight: 300;
     color: #e5e7eb;
     cursor: pointer;
@@ -933,8 +951,8 @@ body {
 }
 
 .sidebar .refinements-section h3 {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 7.5px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 9.5px;
     font-weight: 700;
     color: #e5e7eb;
     text-transform: uppercase;
@@ -1153,7 +1171,7 @@ body {
 }
 
 .modal-left .match-text {
-    font-size: 9px;
+    font-size: 11px;
     line-height: 1;
 }
 
@@ -1475,7 +1493,7 @@ body {
     border: 1px solid #8b5cf6;
     padding: 6px 8px;
     border-radius: 20px;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1493,7 +1511,7 @@ body {
     border: 1px solid #8b5cf6;
     padding: 6px 8px;
     border-radius: 20px;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1577,7 +1595,7 @@ body {
         width: 25%;
         min-width: 100px;
         flex-shrink: 0;
-        font-size: 10px;
+        font-size: 12px;
         padding: 0;
         border-right: none;
     }
@@ -1590,18 +1608,18 @@ body {
     }
     
     .session-section h3 {
-        font-size: 9px;
+        font-size: 11px;
         margin: 4px 0;
     }
     
     .session-title {
-        font-size: 9px;
+        font-size: 11px;
         padding: 2px 0;
     }
     
     .quick-link {
         padding: 4px 6px;
-        font-size: 9px;
+        font-size: 11px;
     }
     
     /* Reduce all sidebar section headers */
@@ -1610,13 +1628,13 @@ body {
     }
     
     .session-section h3 {
-        font-size: 8px;
+        font-size: 12px;
         padding: 2px 0;
     }
     
     .search-item, .filter-item {
         padding: 4px 6px;
-        font-size: 9px;
+        font-size: 11px;
         margin: 2px 0;
     }
     
@@ -1635,13 +1653,13 @@ body {
     /* Reduce filter chips size */
     .filter-chip {
         padding: 4px 8px;
-        font-size: 9px;
+        font-size: 11px;
     }
     
     /* Reduce quick refinement buttons */
     .refinement-btn {
         padding: 4px 8px;
-        font-size: 9px;
+        font-size: 11px;
     }
     
     /* Right panel sizing */
@@ -1753,15 +1771,15 @@ body {
     
     /* Reduce logo and banner sizes for mobile */
     .logo h1 {
-        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 10.8px;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 12.8px;
         margin: 0;
         line-height: 1.2;
     }
     
     .tagline {
-        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 3px;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 5px;
         margin: 1px 0 0 0;
     }
     
@@ -1781,36 +1799,49 @@ body {
     }
     
     .empty-message h3 {
-        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 10.8px;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 12.8px;
         margin-bottom: 4px;
     }
     
     .empty-message p {
-        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 7.2px;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 11.2px;
         margin: 0;
     }
     
     /* Reduce new search button size for mobile */
     .new-search-btn-inline {
         padding: 2px 4px;
-        font-size: 8px;
+        font-size: 12px;
     }
     
     /* Reduce SMART PICKS and My Wardrobe font sizes to match Styles */
     .sidebar .refinements-section h3 {
-        font-size: 8px;
+        font-size: 12px;
     }
     
     .quick-links-section h3 {
-        font-size: 8px;
+        font-size: 12px;
     }
     
     /* Reduce badge size for mobile */
     .badge {
-        font-size: 10px;
-        padding: 1px 4px;
+        font-size: 8px;
+        padding: 1px 3px;
+        font-weight: 700;
+        font-family: 'Cormorant Garamond', serif;
+        background: transparent;
+        color: #e2e8f0 !important;
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 12px;
+        height: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
     }
     
     /* Reduce message input size */
@@ -1829,6 +1860,8 @@ body {
         width: calc(100% - 40px);
         border-right: none;
         border-radius: 20px 0 0 20px;
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 400;
     }
     
     .send-btn {
@@ -1841,7 +1874,7 @@ body {
     
     /* Reduce message content size */
     .message-content {
-        font-size: 12px;
+        font-size: 14px;
         padding: 6px 10px;
         line-height: 1.4;
     }
@@ -1861,23 +1894,23 @@ body {
     
     .cart-item {
         padding: 6px;
-        font-size: 10px;
+        font-size: 12px;
         margin-bottom: 6px;
     }
     
     .cart-item-info h4 {
-        font-size: 9px;
+        font-size: 11px;
         line-height: 1.2;
         margin-bottom: 2px;
     }
     
     .cart-item-info p {
-        font-size: 8px;
+        font-size: 12px;
         margin: 1px 0;
     }
     
     .cart-item-price {
-        font-size: 10px;
+        font-size: 12px;
     }
     
     /* Product cards on cart/favorites pages */
@@ -1890,7 +1923,7 @@ body {
     }
     
     #productGridContainer .product-name {
-        font-size: 10px;
+        font-size: 12px;
     }
     
     #productGridContainer .product-price {
@@ -1912,7 +1945,7 @@ body {
     /* Cart page buttons */
     .cart-item-actions button {
         padding: 3px 6px;
-        font-size: 8px;
+        font-size: 12px;
         margin: 2px;
         min-height: 20px;
         line-height: 1.2;
@@ -1920,24 +1953,24 @@ body {
     
     .cart-actions button {
         padding: 5px 10px;
-        font-size: 9px;
+        font-size: 11px;
         margin: 3px 2px;
         min-height: 24px;
     }
     
     .product-actions button {
-        font-size: 10px;
+        font-size: 12px;
         padding: 4px 8px;
     }
     
     /* Reduce all button font sizes on mobile */
     button {
-        font-size: 9px;
+        font-size: 11px;
     }
     
     .btn-primary, .btn-secondary {
         padding: 5px 10px;
-        font-size: 9px;
+        font-size: 11px;
         min-height: 24px;
     }
     
