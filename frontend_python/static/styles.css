@@ -300,7 +300,7 @@ body {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    padding-left: 75%;
+    padding-left: 70%;
 }
 
 .banner-icons {
@@ -1604,7 +1604,7 @@ body {
 /* Toast Notification */
 .toast {
     position: absolute;
-    left: calc(75% - 160px);
+    left: calc(70% - 160px);
     top: 50%;
     transform: translateY(-50%);
     background: transparent;
@@ -1957,30 +1957,31 @@ body {
     
     /* Sticky Banner Mobile */
     .sticky-banner {
-        padding: 3px 12px;
-        padding-left: 70%;
+        padding: 2px 8px;
+        padding-left: 65%;
     }
     
     /* Toast Mobile */
     .toast {
-        left: calc(70% - 140px);
+        left: calc(65% - 160px);
+        font-size: 11px;
     }
     
     .banner-link {
-        width: 40px;
-        height: 32px;
+        width: 32px;
+        height: 28px;
         border-radius: 6px;
     }
     
     .banner-icon {
-        font-size: 18px;
+        font-size: 16px;
     }
     
     .banner-badge {
-        font-size: 10px;
+        font-size: 9px;
         padding: 1px 3px;
-        min-width: 12px;
-        height: 12px;
+        min-width: 10px;
+        height: 10px;
         top: 1px;
         right: 1px;
         background: transparent;
