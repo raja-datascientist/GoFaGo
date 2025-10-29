@@ -321,9 +321,19 @@ body {
     text-decoration: none;
 }
 
-.banner-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
+.banner-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.1);
+}
+
+.banner-link.active .banner-icon {
+    filter: brightness(1.8) contrast(1.4);
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+.banner-link.active .banner-badge {
+    color: white !important;
+    text-shadow: none;
 }
 
 .banner-icon {
@@ -1614,6 +1624,46 @@ body {
     transform: translateY(0);
     opacity: 1;
     visibility: visible;
+}
+
+/* Cart Page Styles */
+.cart-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.cart-header .subheader {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.cart-actions button {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    margin: 4px;
+    min-height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cart-item-actions button {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    margin: 2px;
+    min-height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 /* Responsive Design */

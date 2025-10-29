@@ -1165,14 +1165,25 @@ class StyleAI {
             link.classList.remove('active');
         });
         
+        // Update active states - remove active from all banner-link items
+        document.querySelectorAll('.banner-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
         // Update search history active state - remove active from all search items
         document.querySelectorAll('.search-item').forEach(item => {
             item.classList.remove('active');
         });
         
-        // Add active class only if the page element exists
+        // Add active class to banner link if it exists
+        const bannerLink = document.querySelector(`.banner-link[data-page="${page}"]`);
+        if (bannerLink) {
+            bannerLink.classList.add('active');
+        }
+        
+        // Add active class only if the page element exists (for quick links)
         const pageElement = document.querySelector(`[data-page="${page}"]`);
-        if (pageElement) {
+        if (pageElement && !pageElement.classList.contains('banner-link')) {
             pageElement.classList.add('active');
         }
         
@@ -1185,6 +1196,9 @@ class StyleAI {
                 break;
             case 'favorites':
                 this.showFavoritesPage();
+                break;
+            case 'search':
+                this.showSearchPage();
                 break;
             case 'trending':
                 this.showTrendingPage();
@@ -2035,10 +2049,7 @@ class StyleAI {
             sessionItem.addEventListener('click', (e) => {
                 // Don't switch if clicking the delete button
                 if (!e.target.classList.contains('delete-session-btn')) {
-                    // Remove active from any quick-link items first
-                    document.querySelectorAll('.quick-link').forEach(link => {
-                        link.classList.remove('active');
-                    });
+                    this.navigateToPage('search');
                     this.switchSession(session.id);
                 }
             });
