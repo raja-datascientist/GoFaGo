@@ -1586,25 +1586,28 @@ body {
 
 /* Toast Notification */
 .toast {
-    position: fixed;
-    top: auto;
-    bottom: 20px;
-    left: 20px;
+    position: relative;
     background: transparent;
-    color: #f093fb;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Cormorant Garamond', serif;
     font-style: italic;
     box-shadow: none;
-    transform: translateY(100%);
+    transform: translateY(-10px);
     opacity: 0;
     visibility: hidden;
     transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
     z-index: 1001;
-    max-width: 260px;
+    max-width: 200px;
     border: none;
+}
+
+.toast::after {
+    content: " →";
+    margin-left: 4px;
 }
 
 .toast.show {
