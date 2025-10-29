@@ -749,16 +749,26 @@ class StyleAI {
             }
         }
         
-        // Update ratings (from product data if available, otherwise use defaults)
+        // Update ratings (from product data if available, otherwise hide it)
+        const ratingContainer = document.querySelector('.product-rating');
         const ratingStars = document.querySelector('.product-rating .stars');
         const ratingText = document.querySelector('.product-rating .rating-text');
-        if (ratingStars) {
-            const rating = product.rating || 4.5;
-            const stars = Math.round(rating);
-            ratingStars.textContent = '★★★★☆'.slice(0, stars) + '☆'.repeat(5 - stars);
-        }
-        if (ratingText && product.reviews) {
-            ratingText.textContent = `${product.rating || 4.5} (${product.reviews})`;
+        if (product.rating || product.reviews) {
+            if (ratingContainer) ratingContainer.style.display = 'flex';
+            if (ratingStars) {
+                const rating = product.rating || 4.5;
+                const stars = Math.round(rating);
+                ratingStars.textContent = '★★★★☆'.slice(0, stars) + '☆'.repeat(5 - stars);
+            }
+            if (ratingText) {
+                if (product.reviews) {
+                    ratingText.textContent = `${product.rating || 4.5} (${product.reviews})`;
+                } else {
+                    ratingText.textContent = product.rating || '4.5';
+                }
+            }
+        } else {
+            if (ratingContainer) ratingContainer.style.display = 'none';
         }
         
         // Update favorite icon in modal
@@ -772,10 +782,10 @@ class StyleAI {
         }
         
         // Update colors from product data
-        const colorLabel = document.querySelector('.color-selector label');
-        if (colorLabel) {
+        const colorValue = document.querySelector('.color-selector .color-value');
+        if (colorValue) {
             const colors = product.Colors_Available || product.colors_available || product.Colors || product.colors || 'Various colors';
-            colorLabel.textContent = `Available Colors: ${colors}`;
+            colorValue.textContent = colors;
         }
         // Hide color options tiles below image
         const colorOptions = document.querySelector('.color-options');
@@ -784,14 +794,14 @@ class StyleAI {
         }
         
         // Update sizes from product data
-        const sizeLabel = document.querySelector('.size-selector label');
+        const sizeValue = document.querySelector('.size-selector .size-value');
         const sizeOptions = document.querySelector('.size-options');
-        if (sizeLabel) {
+        if (sizeValue) {
             const sizes = product.Sizes || product.sizes || '';
             if (sizes) {
-                sizeLabel.textContent = `Available Sizes: ${sizes}`;
+                sizeValue.textContent = sizes;
             } else {
-                sizeLabel.textContent = 'Available Sizes: Various';
+                sizeValue.textContent = 'Various';
             }
         }
         if (sizeOptions) {
