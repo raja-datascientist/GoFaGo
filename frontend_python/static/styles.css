@@ -119,7 +119,7 @@ body {
 }
 
 .new-search-btn-inline {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.08);
     border: none;
     color: white;
     padding: 4px 8px;
@@ -137,7 +137,8 @@ body {
 
 .new-search-btn-inline:hover {
     color: white;
-    background: rgba(100, 116, 139, 0.1);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
 }
 
 .search-history {
@@ -301,8 +302,8 @@ body {
     background: rgba(255, 255, 255, 0.2);
     border: none;
     border-radius: 8px;
-    width: 38px;
-    height: 29px;
+    width: 30px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -317,7 +318,7 @@ body {
 }
 
 .theme-icon {
-    font-size: 18px;
+    font-size: 14px;
     transition: transform 0.3s ease;
 }
 
@@ -404,11 +405,13 @@ body.day-mode .refinement-btn:hover {
 
 body.day-mode .new-search-btn-inline {
     color: #000000;
+    background: rgba(0, 0, 0, 0.06);
 }
 
 body.day-mode .new-search-btn-inline:hover {
     color: #000000;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
 }
 
 body.day-mode .search-item:hover {
@@ -2325,12 +2328,12 @@ body.day-mode .sticky-banner {
     
     /* Theme Toggle Mobile */
     .theme-toggle {
-        width: 24px;
-        height: 20px;
+        width: 20px;
+        height: 16px;
     }
     
     .theme-icon {
-        font-size: 12px;
+        font-size: 10px;
     }
     
     /* Toast Mobile */
