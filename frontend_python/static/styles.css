@@ -241,7 +241,7 @@ body {
 .quick-link:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
-    transform: scale(1.25); /* enlarge quick links */
+    transform: scale(1.125); /* reduced ~10% */
 }
 
 .quick-link.active {
@@ -404,7 +404,7 @@ body.day-mode .refinement-btn:hover,
 body.day-mode .sort-btn:hover {
     background: transparent; /* no highlight */
     color: #000000;
-    transform: scale(1.48); /* 25% bigger than 1.18 */
+    transform: scale(1.33); /* reduced ~10% */
 }
 
 body.day-mode .new-search-btn-inline {
@@ -1419,7 +1419,7 @@ body.day-mode .sticky-banner {
 .sort-btn:hover {
     background: transparent; /* no highlight */
     color: #ffffff;
-    transform: scale(1.48); /* 25% bigger than 1.18 */
+    transform: scale(1.33); /* reduced ~10% */
 }
 
 .refinement-btn span,
@@ -1593,6 +1593,104 @@ body.day-mode .sticky-banner {
     position: relative;
     overflow-y: auto;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+/* Style Quiz modal - Night mode override */
+body:not(.day-mode) #styleQuizModal .modal-content {
+    background: linear-gradient(135deg, #353535 0%, #2c2c2c 50%, #242424 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+body:not(.day-mode) #styleQuizModal .modal-body {
+    color: #ffffff;
+}
+body:not(.day-mode) #styleQuizModal #styleQuizInput {
+    background: #ffffff; /* match main chat input */
+    color: #000000;
+    border: 1px solid #e2e8f0;
+}
+body:not(.day-mode) #styleQuizModal #styleQuizInput::placeholder {
+    color: #64748b;
+}
+
+/* Style Quiz chat messages - match main chat styles */
+#styleQuizModal .user-message .message-content {
+    background: transparent;
+    color: white;
+    box-shadow: none;
+    border: none;
+    border-right: 2px solid #10b981;
+    font-weight: normal;
+}
+#styleQuizModal .ai-message .message-content {
+    background: transparent;
+    color: white;
+    box-shadow: none;
+    border-left: 2px solid #8b5cf6;
+}
+
+/* Day mode variants for quiz messages */
+body.day-mode #styleQuizModal .user-message .message-content {
+    background: #f1f5f9;
+    color: #000000;
+    border-right: 2px solid #10b981;
+}
+body.day-mode #styleQuizModal .ai-message .message-content {
+    background: #f8fafc;
+    color: #000000;
+    border-left: 2px solid #8b5cf6;
+}
+
+/* Style Quiz input area - mimic main input */
+#styleQuizModal .modal-body > div:last-child {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    justify-content: center;
+}
+#styleQuizModal #styleQuizInput {
+    flex: 0 0 auto;
+    width: calc(65% - 55px); /* increased ~30% from previous */
+    padding: 12px 16px; /* slight increase */
+    border: 1px solid #e2e8f0;
+    border-right: none;
+    border-radius: 30px 0 0 30px;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    min-height: 45px; /* increased ~25% */
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+}
+body:not(.day-mode) #styleQuizModal #styleQuizInput {
+    border-color: #475569;
+}
+#styleQuizModal #styleQuizInput:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+#styleQuizModal #styleQuizSend {
+    background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
+    color: white;
+    border: 1px solid transparent;
+    border-left: none;
+    padding: 0;
+    border-radius: 0 30px 30px 0;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 45px; /* match increased input height */
+    width: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#styleQuizModal #styleQuizSend:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #d373ea 100%);
+    transform: translateY(-1px);
 }
 
 .modal-close {

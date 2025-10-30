@@ -24,9 +24,175 @@ class StyleAI {
         this.activeFilters = []; // Track active filter chips
         this.originalProductsData = null; // Store original unfiltered products
         
+        // Style Quiz state
+        this.styleProfiles = this.loadStyleProfiles();
+        this.activeStyleProfileId = localStorage.getItem('styleai_active_style_profile') || null;
+
         this.init();
     }
 
+    // ===== Style Quiz (Profiles) =====
+    loadStyleProfiles() {
+        try {
+            const raw = localStorage.getItem('styleai_style_profiles');
+            const parsed = raw ? JSON.parse(raw) : [];
+            // Remove any placeholder/default profiles with no answers
+            const cleaned = (parsed || []).filter(p => p && p.answers && Object.keys(p.answers).length > 0);
+            if (cleaned.length !== (parsed || []).length) {
+                // Persist cleanup if we filtered anything out
+                localStorage.setItem('styleai_style_profiles', JSON.stringify(cleaned));
+            }
+            return cleaned;
+        } catch {
+            return [];
+        }
+    }
+
+    saveStyleProfiles() {
+        localStorage.setItem('styleai_style_profiles', JSON.stringify(this.styleProfiles || []));
+    }
+
+    getActiveStyleProfile() {
+        if (!this.activeStyleProfileId) return null;
+        return (this.styleProfiles || []).find(p => p.id === this.activeStyleProfileId) || null;
+    }
+
+    summarizeStyleProfile(profile) {
+        if (!profile || !profile.answers) return '';
+        const a = profile.answers;
+        const parts = [];
+        if (a.colors) parts.push(`colors: ${a.colors}`);
+        if (a.fit) parts.push(`fit: ${a.fit}`);
+        if (a.budget) parts.push(`budget: ${a.budget}`);
+        if (a.occasion) parts.push(`occasion: ${a.occasion}`);
+        if (a.styles) parts.push(`styles: ${a.styles}`);
+        return parts.join(', ');
+    }
+
+    renderStyleProfiles() {
+        const list = document.getElementById('styleProfilesList');
+        if (!list) return;
+        list.innerHTML = '';
+        // Add default entry to start the quiz (styled like refinement buttons)
+        const takeBtn = document.createElement('button');
+        takeBtn.type = 'button';
+        takeBtn.id = 'openStyleQuizBtn';
+        takeBtn.className = 'refinement-btn';
+        takeBtn.style.width = 'max-content';
+        takeBtn.textContent = 'Take Style Quiz';
+        takeBtn.addEventListener('click', () => this.openStyleQuiz());
+        list.appendChild(takeBtn);
+
+        (this.styleProfiles || []).forEach((p) => {
+            const btn = document.createElement('a');
+            btn.href = '#';
+            btn.className = 'quick-link';
+            btn.style.display = 'flex';
+            btn.innerHTML = `<span>${p.name}</span><span class="link-icon">${this.activeStyleProfileId===p.id ? '✔️' : '↪️'}</span>`;
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.activeStyleProfileId = p.id;
+                localStorage.setItem('styleai_active_style_profile', p.id);
+                this.renderStyleProfiles();
+                this.showToast(`Using profile: ${p.name}`);
+            });
+            list.appendChild(btn);
+        });
+    }
+
+    openStyleQuiz() {
+        const overlay = document.getElementById('styleQuizModal');
+        const chat = document.getElementById('styleQuizChat');
+        if (!overlay || !chat) return;
+        overlay.style.display = 'flex';
+        chat.innerHTML = '';
+        this._quizState = { step: 0, answers: {} };
+        this._quizQuestions = [
+            { key:'colors', q:'What colors do you prefer? (e.g., black, navy, neutrals, bright)' },
+            { key:'fit', q:'What fit do you like? (e.g., slim, regular, relaxed)' },
+            { key:'budget', q:'What is your budget range? (e.g., under $50, $50-$100, premium)' },
+            { key:'occasion', q:'What occasions do you shop for most? (work, casual, gym, party)' },
+            { key:'styles', q:'Any particular styles you love? (minimal, sporty, streetwear, classic)' }
+        ];
+        this.addQuizBot(`Answer a few questions so we can tailor recommendations to your taste. Let’s build your style profile.`);
+        this.addQuizBot(this._quizQuestions[0].q);
+    }
+
+    closeStyleQuiz() {
+        const overlay = document.getElementById('styleQuizModal');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    addQuizBot(text) {
+        const chat = document.getElementById('styleQuizChat');
+        const row = document.createElement('div');
+        row.className = 'ai-message';
+        row.innerHTML = `<div class="message-content">${text}</div>`;
+        chat.appendChild(row);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    addQuizUser(text) {
+        const chat = document.getElementById('styleQuizChat');
+        const row = document.createElement('div');
+        row.className = 'user-message';
+        row.innerHTML = `<div class="message-content">${text}</div>`;
+        chat.appendChild(row);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    handleStyleQuizSend() {
+        const input = document.getElementById('styleQuizInput');
+        if (!input) return;
+        const val = (input.value || '').trim();
+        if (!val) return;
+        input.value = '';
+        if (this._quizMaybeHandleSave(val)) return;
+        this.addQuizUser(val);
+        const state = this._quizState; const qs = this._quizQuestions;
+        const current = qs[state.step];
+        if (current) {
+            state.answers[current.key] = val;
+        }
+        state.step++;
+        if (state.step >= qs.length) {
+            // Finish
+            this.addQuizBot('Great! Would you like to save this as a style profile? (yes/no)');
+            state.awaitSave = true;
+            return;
+        }
+        this.addQuizBot(qs[state.step].q);
+    }
+
+    createNewStyleProfile() {
+        this.openStyleQuiz();
+    }
+
+    // Intercept save confirmation (yes/no) via same input
+    // Extend handleStyleQuizSend to capture save confirmation
+    // We keep logic simple: if awaitSave and user types yes -> save
+    // else close
+    _quizMaybeHandleSave(val) {
+        const state = this._quizState || {};
+        if (!state.awaitSave) return false;
+        const lower = (val || '').toLowerCase();
+        if (['yes','y','save','ok'].includes(lower)) {
+            const id = Date.now().toString();
+            const name = `Style Profile ${this.styleProfiles.length + 1}`;
+            const profile = { id, name, answers: state.answers, createdAt: Date.now() };
+            this.styleProfiles.push(profile);
+            this.saveStyleProfiles();
+            this.activeStyleProfileId = id;
+            localStorage.setItem('styleai_active_style_profile', id);
+            this.renderStyleProfiles();
+            this.addQuizBot(`Saved as "${name}" and set as active. You can apply it to searches now.`);
+        } else {
+            this.addQuizBot('Okay, not saving this time.');
+        }
+        state.awaitSave = false;
+        setTimeout(() => this.closeStyleQuiz(), 600);
+        return true;
+    }
     cleanPrice(price) {
         // Remove any existing $ symbols and whitespace, return as number
         if (typeof price === 'number') return price;
@@ -93,6 +259,8 @@ class StyleAI {
         this.initThemeToggle();
         
         this.setupEventListeners();
+        // Render style quiz profiles list (if present)
+        this.renderStyleProfiles();
         this.updateCartBadge();
         this.updateFavoritesBadge();
         this.updateSearchSessions();
@@ -279,6 +447,18 @@ class StyleAI {
                 this.applySort(sort);
             });
         });
+
+        // Style Quiz buttons
+        const openQuizBtn = document.getElementById('openStyleQuizBtn');
+        if (openQuizBtn) openQuizBtn.addEventListener('click', () => this.openStyleQuiz());
+        const openQuizLink = document.getElementById('openStyleQuizLink');
+        if (openQuizLink) openQuizLink.addEventListener('click', (e) => { e.preventDefault(); this.openStyleQuiz(); });
+        const quizClose = document.getElementById('styleQuizClose');
+        if (quizClose) quizClose.addEventListener('click', () => this.closeStyleQuiz());
+        const quizSend = document.getElementById('styleQuizSend');
+        if (quizSend) quizSend.addEventListener('click', () => this.handleStyleQuizSend());
+        const quizInput = document.getElementById('styleQuizInput');
+        if (quizInput) quizInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.handleStyleQuizSend(); });
 
         // Search pills
         document.querySelectorAll('.search-pill').forEach(pill => {
@@ -1885,8 +2065,14 @@ class StyleAI {
     async sendMessage() {
         console.log('sendMessage called');
         const input = document.getElementById('messageInput');
-        const message = input.value.trim();
+        let message = input.value.trim();
         
+        // Prepend active style profile context if selected
+        const activeProfile = this.getActiveStyleProfile();
+        if (activeProfile) {
+            const summary = this.summarizeStyleProfile(activeProfile);
+            message = `[Using Style Profile: ${activeProfile.name}] ${summary}\n\n` + message;
+        }
         console.log('Message:', message);
         
         if (!message) {

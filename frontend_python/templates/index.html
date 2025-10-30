@@ -57,6 +57,19 @@
                     </div>
                 </div>
 
+                <!-- Style Quiz Section (moved after Smart Sort) -->
+                <div class="refinements-section sidebar" id="styleQuizSection">
+                    <h3 style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>STYLE QUIZ</span>
+                    </h3>
+                    <div id="styleProfilesList" class="quick-links" style="margin-top:4px;">
+                        <a href="#" class="quick-link" id="openStyleQuizLink">
+                            <span>Take Style Quiz</span>
+                            <span class="link-icon">→</span>
+                        </a>
+                    </div>
+                </div>
+
             </div>
         </aside>
 
@@ -190,6 +203,20 @@
                             <span style="color: #64748b; font-size: 14px; font-weight: 500;">AI is finding matching items<span class="loading-dots"></span></span>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Style Quiz Modal -->
+    <div class="modal-overlay" id="styleQuizModal" style="display:none;">
+        <div class="modal-content" style="max-width:504px; width:50vw; height:85vh;">
+            <button class="modal-close" id="styleQuizClose">×</button>
+            <div class="modal-body" style="flex-direction:column; height:100%;">
+                <div id="styleQuizChat" style="padding:16px; display:flex; flex-direction:column; gap:10px; flex:1 1 auto; overflow:auto;"></div>
+                <div style="display:flex; gap:0; padding:12px 16px; border-top:1px solid #e2e8f0; flex:0 0 auto;">
+                    <input id="styleQuizInput" type="text" placeholder="Type your answer..." />
+                    <button id="styleQuizSend" class="new-search-btn-inline">Send</button>
                 </div>
             </div>
         </div>
