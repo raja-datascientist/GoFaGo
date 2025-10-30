@@ -272,6 +272,14 @@ class StyleAI {
             });
         });
 
+        // Smart sorting
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sort = e.currentTarget.dataset.sort;
+                this.applySort(sort);
+            });
+        });
+
         // Search pills
         document.querySelectorAll('.search-pill').forEach(pill => {
             pill.addEventListener('click', (e) => {
@@ -1747,6 +1755,24 @@ class StyleAI {
         }
         
         console.log('After filtering:', filteredProducts.length, 'products');
+
+        // Apply active sort if set
+        if (this.activeSort) {
+            const sortKey = this.activeSort;
+            if (sortKey === 'price') {
+                filteredProducts.sort((a, b) => this.cleanPrice(a.price || a.current_price) - this.cleanPrice(b.price || b.current_price));
+            } else if (sortKey === 'offer') {
+                const toNum = (v) => {
+                    const n = parseFloat((v || '').toString().replace(/[^0-9.]/g, ''));
+                    return isNaN(n) ? 0 : n;
+                };
+                filteredProducts.sort((a, b) => toNum(b.offer_percent || a["Offer %"]) - toNum(a.offer_percent || a["Offer %"]));
+            } else if (sortKey === 'brand') {
+                const an = (a.brand || a.Brand || a.vendor || '').toString().toLowerCase();
+                const bn = (b.brand || b.Brand || b.vendor || '').toString().toLowerCase();
+                filteredProducts.sort((a, b) => an.localeCompare(bn));
+            }
+        }
         
         // Always display products (filtered or all)
         if (filteredProducts.length > 0) {
@@ -1757,6 +1783,31 @@ class StyleAI {
         } else {
             this.showToast('No products match the filters');
         }
+    }
+
+    applySort(sort) {
+        // Toggle sort: clicking the same sort clears it
+        if (this.activeSort === sort) {
+            this.activeSort = null;
+            this.removeSortHighlight(sort);
+        } else {
+            if (this.activeSort) {
+                this.removeSortHighlight(this.activeSort);
+            }
+            this.activeSort = sort;
+            this.addSortHighlight(sort);
+        }
+        this.applyActiveFilters();
+    }
+
+    addSortHighlight(sort) {
+        const btn = document.querySelector(`.sort-btn[data-sort="${sort}"]`);
+        if (btn) btn.classList.add('active');
+    }
+
+    removeSortHighlight(sort) {
+        const btn = document.querySelector(`.sort-btn[data-sort="${sort}"]`);
+        if (btn) btn.classList.remove('active');
     }
 
     async performSearch(query) {
