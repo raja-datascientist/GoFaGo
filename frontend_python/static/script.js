@@ -581,6 +581,7 @@ class StyleAI {
         const productBrand = product.brand || product.Brand || 'Brand';
         const productVendor = product.vendor || product.Vendor || '';
         const productPrice = this.formatPrice(product.price || product.current_price || product.Price || '0.00');
+        const offerPercent = product.offer_percent || product.offer || product["Offer %"] || '';
         
         // Check if this product is already in favorites
         const isFavorite = this.favorites.some(f => {
@@ -591,6 +592,7 @@ class StyleAI {
         
         card.innerHTML = `
             <div class="product-image ${colorClass}" ${imageUrl ? `style="background-image: url(${imageUrl}); background-size: cover; background-position: center;"` : ''}>
+                ${offerPercent ? `<div class="offer-badge">${offerPercent}</div>` : ''}
                 <button class="favorite-btn" onclick="styleAI.toggleFavorite('${productId}')">${favoriteIcon}</button>
             </div>
             <div class="product-info">
@@ -936,9 +938,11 @@ class StyleAI {
             });
             const favoriteIcon = isFavorite ? '❤️' : '♡';
             
+            const offerPercent = product.offer_percent || product.offer || product["Offer %"] || '';
             productCard.innerHTML = `
                 <div style="width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 6px; margin-bottom: 12px; background: #f1f5f9; position: relative;">
                     <img src="${imageUrl}" alt="${productName}" style="width: 100%; height: 100%; object-fit: cover;">
+                    ${offerPercent ? `<div class=\"offer-badge\" style=\"position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:10px;line-height:1;\">${offerPercent}</div>` : ''}
                     <button class="favorite-btn-recommendation" data-product-id="${productId}" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #ef4444; transition: all 0.2s ease;">${favoriteIcon}</button>
                 </div>
                 <div style="font-size: 13px; font-weight: 500; color: #1e293b; margin-bottom: 8px; line-height: 1.4; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${productName}</div>
@@ -1078,6 +1082,7 @@ class StyleAI {
             size: product.size || '',
             category: product.category || product.product_category || '',
             description: product.description || product.detailed_description || '',
+            offer_percent: product.offer_percent || product["Offer %"] || product.offer || '',
             addedAt: Date.now()
         };
         
@@ -1138,6 +1143,7 @@ class StyleAI {
             size: product.sizes || '',
             category: product.category || '',
             description: product.detailed_description || product.description || '',
+            offer_percent: product.offer_percent || product["Offer %"] || product.offer || '',
             addedAt: Date.now()
         };
         
@@ -1354,6 +1360,7 @@ class StyleAI {
             const imageUrl = item.image_url || item.imageUrl || '';
             const imageColor = item.imageColor || '#d9e8ff';
             
+            const offerPercent = item.offer_percent || '';
             cartItem.innerHTML = `
                 <div style="display: flex; gap: 12px; align-items: start;">
                     <input type="checkbox" class="cart-item-checkbox" checked style="width: 14px; height: 14px; margin-top: 2px;">
@@ -1362,6 +1369,7 @@ class StyleAI {
                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                             <div>
                                 <div style="font-size: 11px; color: #e5e7eb; margin-bottom: 2px; font-weight: 500;">${item.name}</div>
+                                ${offerPercent ? `<div style="font-size: 10px; color: #22c55e; font-weight: 600; margin: 2px 0 4px 0;">${offerPercent} off</div>` : ''}
                                 <div style="font-size: 9px; color: #9ca3af;">${item.vendor || item.brand || 'Vendor'}</div>
                             </div>
                             <div style="text-align: right;">
@@ -1493,11 +1501,13 @@ class StyleAI {
                     const productVendor = product.vendor || product.Vendor || '';
                     const productPrice = this.formatPrice(product.price || product.current_price || product.Price || '0.00');
                     const isFavorite = true;
+                    const offerPercent = product.offer_percent || product.offer || product["Offer %"] || '';
                     const favoriteIcon = '❤️';
                     
                     return `
                         <div class="product-card" data-product-id="${productId}">
                             <div class="product-image ${colorClass}" ${imageUrl ? `style="background-image: url(${imageUrl}); background-size: cover; background-position: center;"` : ''}>
+                                ${offerPercent ? `<div class=\"offer-badge\">${offerPercent}</div>` : ''}
                                 <button class="favorite-btn" onclick="styleAI.toggleFavorite('${productId}')">${favoriteIcon}</button>
                             </div>
                             <div class="product-info">
@@ -1638,9 +1648,7 @@ class StyleAI {
         // Create filter text mapping
         const filterTexts = {
             'under-50': 'Under $50',
-            'premium': 'Premium Brands',
-            'sale': 'Sale Items',
-            'sustainable': 'Sustainable'
+            'sale': 'Sale Items'
         };
         
         const filterText = filterTexts[filter] || filter;
@@ -1726,16 +1734,13 @@ class StyleAI {
                         const price = this.cleanPrice(p.price || p.current_price);
                         return price < 50;
                     });
-                } else if (filter === 'premium') {
-                    filteredProducts = filteredProducts.filter(p => {
-                        const price = this.cleanPrice(p.price || p.current_price);
-                        return price >= 100;
-                    });
                 } else if (filter === 'sale') {
+                    // Products with an offer percentage present (> 0)
                     filteredProducts = filteredProducts.filter(p => {
-                        const listPrice = this.cleanPrice(p.list_price || p.list_price);
-                        const currentPrice = this.cleanPrice(p.price || p.current_price);
-                        return listPrice > currentPrice;
+                        const offerRaw = (p.offer_percent || p["Offer %"] || p.offer || '').toString();
+                        if (!offerRaw) return false;
+                        const num = parseFloat(offerRaw.replace(/[^0-9.]/g, ''));
+                        return !isNaN(num) && num > 0;
                     });
                 }
             }
