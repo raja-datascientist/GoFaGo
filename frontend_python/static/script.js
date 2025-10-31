@@ -73,22 +73,25 @@ class StyleAI {
         const list = document.getElementById('styleProfilesList');
         if (!list) return;
         list.innerHTML = '';
-        // Add default entry to start the quiz (styled like refinement buttons)
-        const takeBtn = document.createElement('button');
-        takeBtn.type = 'button';
-        takeBtn.id = 'openStyleQuizBtn';
-        takeBtn.className = 'refinement-btn';
-        takeBtn.style.width = 'max-content';
-        takeBtn.textContent = 'Take Style Quiz';
-        takeBtn.addEventListener('click', () => this.openStyleQuiz());
-        list.appendChild(takeBtn);
+        
+        // Only show "Take Style Quiz" button if no profiles exist yet
+        if (!this.styleProfiles || this.styleProfiles.length === 0) {
+            const takeBtn = document.createElement('button');
+            takeBtn.type = 'button';
+            takeBtn.id = 'openStyleQuizBtn';
+            takeBtn.className = 'refinement-btn';
+            takeBtn.style.width = 'max-content';
+            takeBtn.textContent = 'Take Style Quiz';
+            takeBtn.addEventListener('click', () => this.openStyleQuiz());
+            list.appendChild(takeBtn);
+        }
 
         (this.styleProfiles || []).forEach((p) => {
             const btn = document.createElement('a');
             btn.href = '#';
             btn.className = 'quick-link';
             btn.style.display = 'flex';
-            btn.innerHTML = `<span>${p.name}</span><span class="link-icon">${this.activeStyleProfileId===p.id ? '✔️' : '↪️'}</span>`;
+            btn.innerHTML = `<span>${p.name}</span>`;
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.activeStyleProfileId = p.id;
@@ -201,7 +204,7 @@ class StyleAI {
     handleQuizComplete(summary) {
         // Save preferences as a profile and close
         const id = Date.now().toString();
-        const name = `Style Profile ${((this.styleProfiles||[]).length + 1)}`;
+        const name = ((this.styleProfiles||[]).length === 0) ? 'Your Style Profile' : `Style Profile ${((this.styleProfiles||[]).length + 1)}`;
         const profile = { id, name, answers: {}, createdAt: Date.now() };
         this.styleProfiles = this.styleProfiles || [];
         this.styleProfiles.push(profile);
@@ -225,7 +228,7 @@ class StyleAI {
     // else close
     _quizMaybeHandleSave() { return false; }
 
-    postStyleSummaryToMainChat(profileName, summary) {
+    async postStyleSummaryToMainChat(profileName, summary) {
         const chatMessages = document.getElementById('chatMessages');
         const emptyState = document.getElementById('emptyState');
         if (emptyState) emptyState.style.display = 'none';
@@ -237,6 +240,148 @@ class StyleAI {
             aiMsg.innerHTML = `<div class="message-content">Saved ${profileName}. Baseline preferences: ${summary}</div>`;
             chatMessages.appendChild(aiMsg);
             this.autoScroll();
+        }
+        
+        // Add the preferences to conversation history as context so LLM understands them for future queries
+        // Format it clearly as an assistant message establishing preferences
+        this.conversationHistory.push({
+            role: 'assistant',
+            content: `I've saved your preferences: ${summary}. I'll use these to help you find products.`
+        });
+        
+        // Automatically search based on the summary after a short delay
+        setTimeout(async () => {
+            console.log('Auto-search triggered with summary:', summary);
+            await this.performAutoSearch(summary);
+        }, 500);
+    }
+    
+    async performAutoSearch(query) {
+        console.log('performAutoSearch called with query:', query);
+        // Use the summary as the search query - it's already a natural sentence describing preferences
+        const originalMessage = query.trim();
+        
+        // For auto-search, the query itself IS the preference summary, so use it directly
+        // Don't add style profile prefix since we already established preferences in conversation history
+        let messageForBackend = originalMessage;
+        
+        // Helper to get first two words from message (from original query, not the formatted one)
+        const getFirstTwoWords = (text) => {
+            const words = text.trim().split(/\s+/);
+            return words.slice(0, 2).join(' ');
+        };
+        
+        // Create session if this is the first search
+        // Note: Preserve existing conversation history (including style preferences) when creating new session
+        if (!this.currentSessionId) {
+            const newSession = {
+                id: Date.now().toString(),
+                title: getFirstTwoWords(originalMessage),
+                timestamp: Date.now(),
+                conversationHistory: [...this.conversationHistory], // Preserve existing conversation history
+                products: [],
+                searchContext: null
+            };
+            this.searchSessions.push(newSession);
+            this.currentSessionId = newSession.id;
+            this.updateSearchSessions();
+        }
+        
+        // Add user message to conversation history - the query is a search request based on the established preferences
+        // Since preferences are already in conversation history, just send the query as-is
+        this.conversationHistory.push({
+            role: 'user',
+            content: messageForBackend
+        });
+        
+        // Show loading
+        const chatMessages = document.getElementById('chatMessages');
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'ai-message';
+        loadingMessage.innerHTML = `
+            <div class="message-content">
+                Searching for the perfect products<span class="blinking-circles">
+                    <span class="circle c1">●</span>
+                    <span class="circle c2">●</span>
+                    <span class="circle c3">●</span>
+                </span>
+            </div>
+        `;
+        chatMessages.appendChild(loadingMessage);
+        this.autoScroll();
+        
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: messageForBackend,
+                    conversationHistory: this.conversationHistory
+                })
+            });
+            
+            // Check if response is OK
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+                throw new Error(errorData.error || `Server error: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            loadingMessage.remove();
+            
+            // Add AI response
+            const aiResponse = document.createElement('div');
+            aiResponse.className = 'ai-message';
+            const aiText = data.message || `I found results based on your preferences! Here are the top picks:`;
+            aiResponse.innerHTML = `<div class="message-content"></div>`;
+            chatMessages.appendChild(aiResponse);
+            await this.typeMessage(aiResponse.querySelector('.message-content'), aiText);
+            this.autoScroll();
+            
+            this.conversationHistory.push({
+                role: 'assistant',
+                content: data.message || `I found results based on your preferences! Here are the top picks:`
+            });
+            
+            if (this.conversationHistory.length > 20) {
+                this.conversationHistory = this.conversationHistory.slice(-20);
+            }
+            
+            // Store search context
+            this.currentSearchContext = {
+                userMessage: originalMessage,
+                filtersApplied: {}
+            };
+            
+            // Display products if available
+            if (data.products && data.products.length > 0) {
+                setTimeout(() => {
+                    this.displayProducts(data.products);
+                }, 500);
+            }
+            
+            // Update header with search title
+            const titleWords = getFirstTwoWords(originalMessage);
+            const searchTitleEl = document.querySelector('.search-title');
+            if (searchTitleEl) {
+                searchTitleEl.textContent = titleWords;
+            }
+            
+            // Update session
+            if (this.currentSessionId) {
+                const session = this.searchSessions.find(s => s.id === this.currentSessionId);
+                if (session) {
+                    if (session.title === 'New Style') {
+                        session.title = titleWords;
+                    }
+                    this.saveCurrentSession();
+                    this.updateSearchSessions();
+                }
+            }
+            
+        } catch (error) {
+            console.error('Auto search error:', error);
+            loadingMessage.remove();
         }
     }
     cleanPrice(price) {
@@ -499,6 +644,8 @@ class StyleAI {
         if (openQuizBtn) openQuizBtn.addEventListener('click', () => this.openStyleQuiz());
         const openQuizLink = document.getElementById('openStyleQuizLink');
         if (openQuizLink) openQuizLink.addEventListener('click', (e) => { e.preventDefault(); this.openStyleQuiz(); });
+        const welcomeQuizLink = document.getElementById('welcomeStyleQuizLink');
+        if (welcomeQuizLink) welcomeQuizLink.addEventListener('click', (e) => { e.preventDefault(); this.openStyleQuiz(); });
         const quizClose = document.getElementById('styleQuizClose');
         if (quizClose) quizClose.addEventListener('click', () => this.closeStyleQuiz());
         const quizSend = document.getElementById('styleQuizSend');
@@ -2111,26 +2258,30 @@ class StyleAI {
     async sendMessage() {
         console.log('sendMessage called');
         const input = document.getElementById('messageInput');
-        let message = input.value.trim();
+        let originalMessage = input.value.trim();
         
-        // Prepend active style profile context if selected
-        const activeProfile = this.getActiveStyleProfile();
-        if (activeProfile) {
-            const summary = this.summarizeStyleProfile(activeProfile);
-            message = `[Using Style Profile: ${activeProfile.name}] ${summary}\n\n` + message;
-        }
-        console.log('Message:', message);
-        
-        if (!message) {
+        if (!originalMessage) {
             console.log('Empty message, returning');
             return;
         }
+        
+        // Store original message for display (without style profile prefix)
+        const displayMessage = originalMessage;
+        
+        // Prepend active style profile context if selected (for backend only)
+        const activeProfile = this.getActiveStyleProfile();
+        let messageForBackend = originalMessage;
+        if (activeProfile) {
+            const summary = this.summarizeStyleProfile(activeProfile);
+            messageForBackend = `[Using Style Profile: ${activeProfile.name}] ${summary}\n\n` + originalMessage;
+        }
+        console.log('Message for backend:', messageForBackend);
         
         // Create session if this is the first search
         if (!this.currentSessionId) {
             const newSession = {
                 id: Date.now().toString(),
-                title: message.length > 30 ? message.substring(0, 30) + '...' : message,
+                title: displayMessage.length > 30 ? displayMessage.substring(0, 30) + '...' : displayMessage,
                 timestamp: Date.now(),
                 conversationHistory: [],
                 products: [],
@@ -2156,19 +2307,19 @@ class StyleAI {
         
         const chatMessages = document.getElementById('chatMessages');
         
-        // Add user message to chat
+        // Add user message to chat (show only original message, no style profile prefix)
         const userMessage = document.createElement('div');
         userMessage.className = 'user-message';
         userMessage.innerHTML = `
-            <div class="message-content">${message}</div>
+            <div class="message-content">${displayMessage}</div>
         `;
             chatMessages.appendChild(userMessage);
             this.autoScroll();
         
-        // Add user message to conversation history
+        // Add user message to conversation history (use full message with prefix for backend context)
         this.conversationHistory.push({
             role: 'user',
-            content: message
+            content: messageForBackend
         });
         
         // Clear input
@@ -2197,10 +2348,16 @@ class StyleAI {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    message: message,
+                    message: messageForBackend,
                     conversationHistory: this.conversationHistory
                 })
             });
+            
+            // Check if response is OK
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+                throw new Error(errorData.error || `Server error: ${response.status} ${response.statusText}`);
+            }
             
             const data = await response.json();
             console.log('Server response:', data);
@@ -2212,7 +2369,7 @@ class StyleAI {
             // Add AI response with typing animation
             const aiResponse = document.createElement('div');
             aiResponse.className = 'ai-message';
-            const aiText = data.message || `I found results for "${message}"! Here are the top picks:`;
+            const aiText = data.message || `I found results for "${displayMessage}"! Here are the top picks:`;
             
             // Start with empty content
             aiResponse.innerHTML = `
@@ -2229,7 +2386,7 @@ class StyleAI {
         // Add AI response to conversation history
             this.conversationHistory.push({
                 role: 'assistant',
-                content: data.message || `I found results for "${message}"! Here are the top picks:`
+                content: data.message || `I found results for "${displayMessage}"! Here are the top picks:`
             });
             
             // Limit conversation history to last 20 messages to avoid context window issues
@@ -2239,17 +2396,17 @@ class StyleAI {
             
             // Store search context for recommendations
             this.currentSearchContext = {
-                userMessage: message,
+                userMessage: displayMessage,
                 filtersApplied: {} // Can be extended with filters later
             };
             
             // Extract price constraints from user message if any
-            const priceMatch = message.match(/(?:under|below|less than|<)\s*\$?(\d+)/i);
+            const priceMatch = displayMessage.match(/(?:under|below|less than|<)\s*\$?(\d+)/i);
             if (priceMatch) {
                 this.currentSearchContext.filtersApplied.max_price = parseFloat(priceMatch[1]);
             }
             
-            const minPriceMatch = message.match(/(?:above|over|more than|>)\s*\$?(\d+)/i);
+            const minPriceMatch = displayMessage.match(/(?:above|over|more than|>)\s*\$?(\d+)/i);
             if (minPriceMatch) {
                 this.currentSearchContext.filtersApplied.min_price = parseFloat(minPriceMatch[1]);
             }
@@ -2267,7 +2424,7 @@ class StyleAI {
             }
             
             // Update header with search title
-            document.querySelector('.search-title').textContent = message;
+            document.querySelector('.search-title').textContent = displayMessage;
             
             // Update session with title and save
             if (this.currentSessionId) {
@@ -2275,7 +2432,7 @@ class StyleAI {
                 if (session) {
                     // Set title from first search if not set
                     if (session.title === 'New Style') {
-                        session.title = message.length > 30 ? message.substring(0, 30) + '...' : message;
+                        session.title = displayMessage.length > 30 ? displayMessage.substring(0, 30) + '...' : displayMessage;
                     }
                     this.saveCurrentSession();
                     this.updateSearchSessions();
@@ -2284,18 +2441,20 @@ class StyleAI {
             
         } catch (error) {
             console.error('Error sending message:', error);
+            console.error('Error details:', error.message, error.stack);
             loadingMessage.remove();
             
             const errorMessage = document.createElement('div');
             errorMessage.className = 'ai-message';
-            const errorText = `<p>I encountered an error. Please try again.</p>`;
+            // Show actual error in console, but user-friendly message in UI
+            const errorText = `<p>I encountered an error: ${error.message || 'Please try again.'}</p>`;
             errorMessage.innerHTML = errorText;
             chatMessages.appendChild(errorMessage);
             
             // Add error message to conversation history
             this.conversationHistory.push({
                 role: 'assistant',
-                content: errorText
+                content: `I encountered an error: ${error.message || 'Please try again.'}`
             });
             
             // Limit conversation history to last 20 messages

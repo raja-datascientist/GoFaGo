@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import asyncio
 import json
+import re
 from typing import Dict, List, Any
 import anthropic
 from mcp_client import mcp_client
@@ -41,7 +42,9 @@ def chat():
         
     except Exception as e:
         print(f"Error in chat endpoint: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/recommendations', methods=['POST'])
 def get_recommendations():
@@ -67,6 +70,21 @@ def get_recommendations():
         return jsonify({'error': 'Internal server error'}), 500
 
 
+def extract_entities_from_conversation(messages):
+    """Extract meaningful entities from user messages in the conversation"""
+    entities = []
+    
+    # Collect all user answers
+    for msg in messages:
+        if msg.get('role') == 'user' and msg.get('content'):
+            content = msg.get('content', '').strip()
+            # Skip the initial seed message
+            if content and len(content) < 200 and not content.startswith('Start'):
+                entities.append(content)
+    
+    # Return as comma-separated list
+    return ', '.join(entities) if entities else ''
+
 @app.route('/api/style_quiz', methods=['POST'])
 def style_quiz_removed():
     return jsonify({'error': 'Deprecated. Use /api/style_agent'}), 410
@@ -86,15 +104,24 @@ def style_agent():
         question_count = len(assistant_turns)
 
         system_prompt = """You are a Fashion Preferences Agent in a shopping app.
-Your role is to understand the user's fashion preferences by asking questions.
-Ask ONE short, focused question per turn about their style preferences (colors, occasions, fit, budget, fabric, season, style type).
+Your role is to understand the user's CURRENT shopping context and occasion by asking questions.
+Ask ONE short, focused question per turn about their CURRENT needs: what occasion are they shopping for right now, what's their current shopping context, what do they need for this specific situation (colors for this occasion, budget for this purchase, fit preference for this item, etc.).
+Focus on CURRENT context, not general preferences. Ask "What occasion are you shopping for?" not "What occasions do you usually shop for?" Ask "What's your budget for this purchase?" not "What budget do you usually prefer?"
 Be conversational and friendly. Accept free-form answers and infer intent.
 CRITICAL: NEVER use emojis, smileys, or special characters in your responses. Use only plain text. No asterisks, dashes, or formatting symbols.
-After asking about 6-7 questions, thank the user and provide a concise one-sentence summary of their preferences suitable for shopping recommendations.
-When you're ready to finish (after enough questions), start your response with "[DONE]" followed by the summary."""
+
+When you're ready to finish (after 6-7 questions):
+1. Thank the user briefly (optional, one sentence max)
+2. Extract meaningful entities from all the user's answers: occasion, item type, color, budget, fabric, fit, style
+3. Return ONLY the meaningful entities as a comma-separated list (not a sentence)
+4. Format: "[occasion], [item type], [color], [budget], [fabric], [style]"
+5. Example: "Pongal, saree, yellow, 5000 rs, cotton, printed"
+6. Only include entities that were actually mentioned by the user
+7. Keep entity values exactly as the user said them (don't paraphrase)
+8. Start your final response with "[DONE]" followed by the comma-separated entities."""
 
         if not messages:
-            messages = [{ 'role': 'user', 'content': 'Start by introducing yourself and asking the first question about their fashion preferences.' }]
+            messages = [{ 'role': 'user', 'content': 'Start by introducing yourself and asking about their current shopping occasion or what they are looking for right now.' }]
 
         # Format messages for Anthropic API
         formatted_messages = []
@@ -134,12 +161,21 @@ When you're ready to finish (after enough questions), start your response with "
         summary = ''
         if '[DONE]' in text.upper() or question_count >= 6:
             done = True
-            # Extract summary (everything after [DONE] or use the whole text)
+            # Extract entities from LLM response (everything after [DONE])
             if '[DONE]' in text.upper():
-                parts = text.upper().split('[DONE]', 1)
-                summary = parts[1].strip() if len(parts) > 1 else text
+                # Find [DONE] marker (case insensitive) and extract text after it
+                match = re.search(r'\[DONE\]\s*(.+)$', text, re.IGNORECASE | re.DOTALL)
+                if match:
+                    summary = match.group(1).strip()
+                    # Clean up any extra text like "Thank you" etc.
+                    summary = re.sub(r'^\s*(Thank you|Thanks|Wishing you)[^,]*[,\s]*', '', summary, flags=re.IGNORECASE)
+                    summary = summary.strip()
+                else:
+                    # Fallback: extract entities from user messages
+                    summary = extract_entities_from_conversation(formatted_messages)
             else:
-                summary = text
+                # Fallback: extract entities from user messages
+                summary = extract_entities_from_conversation(formatted_messages)
             # Remove [DONE] marker from displayed text
             text = text.replace('[DONE]', '').replace('[done]', '').strip()
 
@@ -248,6 +284,13 @@ CRITICAL TEXT FORMATTING RULES:
 - Format lists with simple bullet points (dashes) or numbered lists
 - Keep responses clean, professional, and user-friendly without special characters
 
+CRITICAL RESPONSE LENGTH RULES:
+- ALL responses must be CRISP and SHORT - maximum 2 sentences
+- When no products are found, keep response to exactly 2 short sentences maximum
+- When asking clarifying questions, keep to 1-2 sentences maximum
+- NO long explanations or multiple paragraphs
+- Be concise and to the point
+
 CRITICAL RECOMMENDATION RULES:
 - When providing fashion recommendations, ALWAYS give a brief explanation (1-2 sentences) of WHY this style, color, or choice works for the user
 - Before showing products, explain why these specific items suit them
@@ -290,13 +333,10 @@ Here's how to handle different situations:
    - IMPORTANT: After user confirms with "yes", "ok", etc., you MUST call the filter_products tool - don't just say you'll search, actually do it!
 
 3. **Unclear Requests:**
-   - If a request is vague or unclear, ask clarifying questions
+   - If a request is vague or unclear, ask ONE short clarifying question (1 sentence maximum)
    - Examples of unclear requests: "I need clothes", "Show me something nice", "What should I wear?"
-   - Ask specific questions like:
-     * "What type of clothing are you looking for? (tops, pants, dresses, etc.)"
-     * "What's the occasion? (work, casual, workout, etc.)"
-     * "What's your budget range?"
-     * "Any specific colors or styles you prefer?"
+   - Ask ONE concise question like: "What type of clothing are you looking for?" or "What's your budget range?"
+   - Keep it to maximum 1 sentence, be direct
 
 4. **Product Search:**
    - Use the filter_products tool to search for products based on their request
@@ -327,9 +367,9 @@ Here's how to handle different situations:
    - Consider factors like color coordination, style matching, and occasion appropriateness
 
 CONVERSATION EXAMPLES:
-- User: "wmne tops less than 50$" → You: "I think you meant 'women' - did you want me to search for women's tops under $50?" → User: "ok" → You: [proceed with search using filter_products tool]
-- User: "I need clothes" → You: "I'd love to help! What type of clothing are you looking for?" → User: "tops" → You: [search for tops]
-- User: "hoodie under 30" → You: "I'd be happy to help you find hoodies under $30! Are you looking for men's or women's hoodies?" → User: "women" → You: [search for women's hoodies under $30]
+- User: "wmne tops less than 50$" → You: "Did you mean 'women'? Should I search for women's tops under $50?" → User: "ok" → You: [proceed with search using filter_products tool]
+- User: "I need clothes" → You: "What type of clothing are you looking for?" → User: "tops" → You: [search for tops]
+- User: "hoodie under 30" → You: "Are you looking for men's or women's hoodies?" → User: "women" → You: [search for women's hoodies under $30]
 - User: "suggest a good hoodie" → You: "Hoodies work best when they complement your style and occasion. For everyday wear, neutral colors like black, navy, or charcoal offer versatility, while bold colors make a statement." → [Use filter_products with appropriate colors]
 - User: "women tops" → You: [shows results] → User: "I'm dark skinned, which one is better?" → You: [Use filter_products to show darker colors like black, navy, burgundy that work well for dark skin - return actual filtered products]
 - User: "hoodies" → You: [shows results] → User: "show me cheaper ones" → You: [Use filter_products with lower max_price and return filtered products]
@@ -338,7 +378,7 @@ IMPORTANT CONVERSATION RULES:
 - Be conversational and friendly, not robotic
 - Ask questions to clarify before searching
 - For typos: Ask "Did you mean...?" and wait for confirmation
-- For unclear requests: Ask specific questions to understand their needs
+- For unclear requests: Ask ONE short question (1 sentence maximum)
 - Only use tools AFTER getting confirmation or clear understanding
 - Make the conversation feel natural and helpful
 - CRITICAL: When user confirms with "yes", "ok", etc., you MUST immediately call the appropriate tool (filter_products or get_similar_products)
@@ -348,6 +388,7 @@ IMPORTANT CONVERSATION RULES:
   * Your message MUST include a brief explanation of WHY these items work for them
   * For simple filters (color, price, size): Just show the products without explanation
   * DO NOT say "I found products" or "Here are products" - instead explain why these work for them first
+- CRITICAL: When NO products are found, response MUST be exactly 2 sentences maximum. Example: "I couldn't find any products matching your search. Could you try different keywords or adjust your filters?"
 
 Always be encouraging, helpful, and focus on helping the customer find exactly what they're looking for. If you're unsure about their request, ask questions to better understand their needs."""
 
@@ -436,9 +477,9 @@ Always be encouraging, helpful, and focus on helping the customer find exactly w
                                     'products': []
                                 }
                             else:
-                                # Provide helpful suggestions when no results
+                                # Provide helpful suggestions when no results - keep it short (max 2 sentences)
                                 return {
-                                    'message': "I couldn't find any products matching your search. Let me help you refine your search! Could you tell me:\n\n• What type of clothing you're looking for? (tops, pants, dresses, etc.)\n• What's your budget range?\n• Any specific colors or styles you prefer?\n• What's the occasion? (work, casual, workout, etc.)\n\nI'm here to help you find exactly what you need!",
+                                    'message': "I couldn't find any products matching your search. Could you try different keywords or adjust your filters?",
                                     'products': []
                                 }
                     elif tool_name == "get_similar_products":
