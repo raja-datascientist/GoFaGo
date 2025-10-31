@@ -66,6 +66,95 @@ def get_recommendations():
         print(f"Error in recommendations endpoint: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+
+@app.route('/api/style_quiz', methods=['POST'])
+def style_quiz_removed():
+    return jsonify({'error': 'Deprecated. Use /api/style_agent'}), 410
+
+@app.route('/api/style_agent', methods=['POST'])
+def style_agent():
+    """Fashion preference agent using Claude.
+    Request: { messages: [{role:'user'|'assistant', content:str}] }
+    Response: { assistant: str, done: bool, preferences?: object, summary?: str }
+    """
+    try:
+        data = request.get_json() or {}
+        messages = data.get('messages') or []
+
+        # Count assistant questions asked
+        assistant_turns = [m for m in messages if m.get('role') == 'assistant']
+        question_count = len(assistant_turns)
+
+        system_prompt = """You are a Fashion Preferences Agent in a shopping app.
+Your role is to understand the user's fashion preferences by asking questions.
+Ask ONE short, focused question per turn about their style preferences (colors, occasions, fit, budget, fabric, season, style type).
+Be conversational and friendly. Accept free-form answers and infer intent.
+CRITICAL: NEVER use emojis, smileys, or special characters in your responses. Use only plain text. No asterisks, dashes, or formatting symbols.
+After asking about 6-7 questions, thank the user and provide a concise one-sentence summary of their preferences suitable for shopping recommendations.
+When you're ready to finish (after enough questions), start your response with "[DONE]" followed by the summary."""
+
+        if not messages:
+            messages = [{ 'role': 'user', 'content': 'Start by introducing yourself and asking the first question about their fashion preferences.' }]
+
+        # Format messages for Anthropic API
+        formatted_messages = []
+        for msg in messages:
+            role = msg.get('role', 'user')
+            content = msg.get('content', '')
+            if role in ['user', 'assistant'] and content:
+                formatted_messages.append({
+                    'role': role,
+                    'content': content
+                })
+
+        if not formatted_messages:
+            formatted_messages = [{ 'role': 'user', 'content': 'Start by introducing yourself and asking the first question.' }]
+
+        client = get_anthropic_client()
+        resp = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=600,
+            system=system_prompt,
+            messages=formatted_messages
+        )
+        
+        # Extract text from response
+        text = ''
+        if resp and resp.content:
+            for block in resp.content:
+                if hasattr(block, 'text'):
+                    text += block.text
+                elif isinstance(block, str):
+                    text += block
+        
+        text = text.strip()
+
+        # Check if agent wants to finish (marked with [DONE])
+        done = False
+        summary = ''
+        if '[DONE]' in text.upper() or question_count >= 6:
+            done = True
+            # Extract summary (everything after [DONE] or use the whole text)
+            if '[DONE]' in text.upper():
+                parts = text.upper().split('[DONE]', 1)
+                summary = parts[1].strip() if len(parts) > 1 else text
+            else:
+                summary = text
+            # Remove [DONE] marker from displayed text
+            text = text.replace('[DONE]', '').replace('[done]', '').strip()
+
+        return jsonify({ 
+            'assistant': text or 'Hello! I\'d love to understand your fashion preferences. What colors do you usually gravitate toward?', 
+            'done': done,
+            'summary': summary if done else None
+        })
+
+    except Exception as e:
+        print('style_agent error:', e)
+        import traceback
+        traceback.print_exc()
+        return jsonify({ 'assistant': f'Sorry, something went wrong: {str(e)}', 'done': False }), 200
+
 def detect_confirmation_response(message: str) -> bool:
     """Detect if user is confirming a previous correction or suggestion"""
     confirmation_words = [

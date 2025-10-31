@@ -106,16 +106,26 @@ class StyleAI {
         if (!overlay || !chat) return;
         overlay.style.display = 'flex';
         chat.innerHTML = '';
-        this._quizState = { step: 0, answers: {} };
-        this._quizQuestions = [
-            { key:'colors', q:'What colors do you prefer? (e.g., black, navy, neutrals, bright)' },
-            { key:'fit', q:'What fit do you like? (e.g., slim, regular, relaxed)' },
-            { key:'budget', q:'What is your budget range? (e.g., under $50, $50-$100, premium)' },
-            { key:'occasion', q:'What occasions do you shop for most? (work, casual, gym, party)' },
-            { key:'styles', q:'Any particular styles you love? (minimal, sporty, streetwear, classic)' }
-        ];
-        this.addQuizBot(`Answer a few questions so we can tailor recommendations to your taste. Let’s build your style profile.`);
-        this.addQuizBot(this._quizQuestions[0].q);
+        this._quizConversation = [];
+        this.addQuizBot(`Answer a few questions so we can tailor recommendations to your taste. Let's build your style profile.`);
+        // Ask the agent for the first question
+        this.showQuizTyping();
+        fetch('/api/style_agent', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: this._quizConversation })
+        }).then(r => r.json()).then(res => {
+            this.hideQuizTyping();
+            this.addQuizBot(res.assistant || 'What colors do you gravitate toward?');
+            // Track assistant turn in conversation
+            this._quizConversation.push({ role: 'assistant', content: res.assistant || '' });
+            if (res.done) {
+                const summary = res.summary || 'Preferences saved.';
+                this.handleQuizComplete(summary);
+            }
+        }).catch(() => {
+            this.hideQuizTyping();
+            this.addQuizBot('Please tell me your color preferences to begin.');
+        });
     }
 
     closeStyleQuiz() {
@@ -141,28 +151,69 @@ class StyleAI {
         chat.scrollTop = chat.scrollHeight;
     }
 
+    showQuizTyping() {
+        const chat = document.getElementById('styleQuizChat');
+        if (!chat) return null;
+        const row = document.createElement('div');
+        row.className = 'ai-message';
+        row.id = 'styleQuizTyping';
+        row.innerHTML = `<div class="message-content" style="display:flex; align-items:center; gap:6px;"><span style="font-size:12px; opacity:0.7;">AI is typing</span><span class="loading-dots"></span></div>`;
+        chat.appendChild(row);
+        chat.scrollTop = chat.scrollHeight;
+        return row;
+    }
+
+    hideQuizTyping() {
+        const typing = document.getElementById('styleQuizTyping');
+        if (typing) typing.remove();
+    }
+
     handleStyleQuizSend() {
         const input = document.getElementById('styleQuizInput');
         if (!input) return;
         const val = (input.value || '').trim();
         if (!val) return;
         input.value = '';
-        if (this._quizMaybeHandleSave(val)) return;
         this.addQuizUser(val);
-        const state = this._quizState; const qs = this._quizQuestions;
-        const current = qs[state.step];
-        if (current) {
-            state.answers[current.key] = val;
-        }
-        state.step++;
-        if (state.step >= qs.length) {
-            // Finish
-            this.addQuizBot('Great! Would you like to save this as a style profile? (yes/no)');
-            state.awaitSave = true;
-            return;
-        }
-        this.addQuizBot(qs[state.step].q);
+        // Append user turn and ask agent for next assistant turn
+        this._quizConversation = this._quizConversation || [];
+        this._quizConversation.push({ role: 'user', content: val });
+        this.showQuizTyping();
+        fetch('/api/style_agent', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: this._quizConversation })
+        }).then(r => r.json()).then(res => {
+            this.hideQuizTyping();
+            if (res.assistant) {
+                this.addQuizBot(res.assistant);
+                this._quizConversation.push({ role: 'assistant', content: res.assistant });
+            }
+            if (res.done) {
+                const summary = res.summary || 'Preferences saved.';
+                this.handleQuizComplete(summary);
+            }
+        }).catch(() => {
+            this.hideQuizTyping();
+            this.addQuizBot('Sorry, something went wrong. Please answer again.');
+        });
     }
+
+    handleQuizComplete(summary) {
+        // Save preferences as a profile and close
+        const id = Date.now().toString();
+        const name = `Style Profile ${((this.styleProfiles||[]).length + 1)}`;
+        const profile = { id, name, answers: {}, createdAt: Date.now() };
+        this.styleProfiles = this.styleProfiles || [];
+        this.styleProfiles.push(profile);
+        this.saveStyleProfiles();
+        this.activeStyleProfileId = id;
+        localStorage.setItem('styleai_active_style_profile', id);
+        this.renderStyleProfiles();
+        this.postStyleSummaryToMainChat(profile.name, summary);
+        setTimeout(() => this.closeStyleQuiz(), 700);
+    }
+
+    // removed client-side canonical mapping and hints; agent handles validation
 
     createNewStyleProfile() {
         this.openStyleQuiz();
@@ -172,26 +223,21 @@ class StyleAI {
     // Extend handleStyleQuizSend to capture save confirmation
     // We keep logic simple: if awaitSave and user types yes -> save
     // else close
-    _quizMaybeHandleSave(val) {
-        const state = this._quizState || {};
-        if (!state.awaitSave) return false;
-        const lower = (val || '').toLowerCase();
-        if (['yes','y','save','ok'].includes(lower)) {
-            const id = Date.now().toString();
-            const name = `Style Profile ${this.styleProfiles.length + 1}`;
-            const profile = { id, name, answers: state.answers, createdAt: Date.now() };
-            this.styleProfiles.push(profile);
-            this.saveStyleProfiles();
-            this.activeStyleProfileId = id;
-            localStorage.setItem('styleai_active_style_profile', id);
-            this.renderStyleProfiles();
-            this.addQuizBot(`Saved as "${name}" and set as active. You can apply it to searches now.`);
-        } else {
-            this.addQuizBot('Okay, not saving this time.');
+    _quizMaybeHandleSave() { return false; }
+
+    postStyleSummaryToMainChat(profileName, summary) {
+        const chatMessages = document.getElementById('chatMessages');
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.style.display = 'none';
+        if (chatMessages) {
+            chatMessages.style.display = 'flex';
+            chatMessages.style.flexDirection = 'column';
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'ai-message';
+            aiMsg.innerHTML = `<div class="message-content">Saved ${profileName}. Baseline preferences: ${summary}</div>`;
+            chatMessages.appendChild(aiMsg);
+            this.autoScroll();
         }
-        state.awaitSave = false;
-        setTimeout(() => this.closeStyleQuiz(), 600);
-        return true;
     }
     cleanPrice(price) {
         // Remove any existing $ symbols and whitespace, return as number
