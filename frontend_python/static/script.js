@@ -532,15 +532,20 @@ class StyleAI {
         this.conversationHistory.forEach(message => {
             const messageEl = document.createElement('div');
             messageEl.className = message.role === 'user' ? 'user-message' : 'ai-message';
+            
+            let displayContent = message.content;
+            // Strip style profile prefix from user messages for display
             if (message.role === 'user') {
-                messageEl.innerHTML = `
-                    <div class="message-content">${message.content}</div>
-                `;
-            } else {
-                messageEl.innerHTML = `
-                    <div class="message-content">${message.content}</div>
-                `;
+                // Remove [Using Style Profile: ...] prefix and any summary that follows
+                // Pattern: [Using Style Profile: ...] [summary]\n\n[user message]
+                // Or: [Using Style Profile: ...]\n\n[user message]
+                displayContent = displayContent.replace(/^\[Using Style Profile:[^\]]+\](?:[^\n]*)?(?:\n\n|\n)/, '');
+                displayContent = displayContent.trim();
             }
+            
+            messageEl.innerHTML = `
+                <div class="message-content">${displayContent}</div>
+            `;
             chatMessages.appendChild(messageEl);
         });
         
