@@ -1613,6 +1613,361 @@ body:not(.day-mode) #styleQuizModal #styleQuizInput::placeholder {
     color: #64748b;
 }
 
+/* Virtual Try On Modal Styles */
+.virtual-tryon-modal {
+    max-width: 600px;
+    width: 90vw;
+    max-height: 85vh;
+}
+
+.virtual-tryon-body {
+    flex-direction: column;
+    height: 100%;
+    padding: 24px;
+    background: transparent !important;
+}
+
+/* Ensure modal body for virtual try on has transparent background */
+#virtualTryOnModal .modal-body,
+#virtualTryOnModal .virtual-tryon-body {
+    background: transparent !important;
+}
+
+/* Override any inherited backgrounds from modal-body - only sections, not inputs/buttons */
+.virtual-tryon-upload-section,
+.virtual-tryon-question-section,
+.virtual-tryon-title,
+.virtual-tryon-description,
+.virtual-tryon-label {
+    background: transparent !important;
+}
+
+.virtual-tryon-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15.5px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 20px 0;
+    padding: 0;
+}
+
+.virtual-tryon-description {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18.25px;
+    font-weight: 400;
+    color: #e2e8f0;
+    margin: 0 0 24px 0;
+    background: transparent !important;
+    padding: 0;
+    line-height: 1.4;
+}
+
+.virtual-tryon-upload-section {
+    margin-bottom: 20px;
+    background: transparent !important;
+    padding: 0;
+}
+
+.virtual-tryon-label {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 8px;
+    background: transparent !important;
+    padding: 0;
+    border: none;
+}
+
+.virtual-tryon-upload-area {
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f8fafc;
+}
+
+.virtual-tryon-upload-area:hover {
+    border-color: #8b5cf6;
+    background: #f1f5f9;
+}
+
+.virtual-tryon-file-input {
+    display: none;
+}
+
+.virtual-tryon-preview {
+    display: none;
+    margin-bottom: 12px;
+}
+
+.virtual-tryon-preview-img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.virtual-tryon-prompt {
+    display: block;
+}
+
+.virtual-tryon-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.virtual-tryon-prompt-text {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.virtual-tryon-prompt-hint {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.virtual-tryon-remove-btn {
+    display: none;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.virtual-tryon-remove-btn:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.virtual-tryon-question-section {
+    margin-bottom: 24px;
+    background: transparent !important;
+    padding: 0;
+}
+
+.virtual-tryon-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    box-sizing: border-box;
+    color: #1e293b;
+    background: #ffffff;
+    transition: border-color 0.2s ease;
+}
+
+.virtual-tryon-textarea:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.virtual-tryon-textarea::placeholder {
+    color: #94a3b8;
+}
+
+.virtual-tryon-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.virtual-tryon-cancel-btn {
+    padding: 10px 20px;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.virtual-tryon-cancel-btn:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.virtual-tryon-submit-btn {
+    padding: 10px 20px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.virtual-tryon-submit-btn:hover {
+    background: #7c3aed;
+    transform: translateY(-1px);
+}
+
+/* Virtual Try On modal - Night mode */
+body:not(.day-mode) #virtualTryOnModal .virtual-tryon-modal {
+    background: linear-gradient(135deg, #353535 0%, #2c2c2c 50%, #242424 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+body:not(.day-mode) #virtualTryOnModal .modal-body,
+body:not(.day-mode) #virtualTryOnModal .virtual-tryon-body {
+    background: transparent !important;
+}
+
+/* Only sections should be transparent, inputs keep their backgrounds */
+body:not(.day-mode) .virtual-tryon-upload-section,
+body:not(.day-mode) .virtual-tryon-question-section,
+body:not(.day-mode) .virtual-tryon-title,
+body:not(.day-mode) .virtual-tryon-description,
+body:not(.day-mode) .virtual-tryon-label {
+    background: transparent !important;
+}
+
+body:not(.day-mode) .virtual-tryon-title {
+    /* Keep gradient text effect for night mode */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #fa709a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body:not(.day-mode) .virtual-tryon-description {
+    color: #e2e8f0;
+    background: transparent !important;
+}
+
+body:not(.day-mode) .virtual-tryon-label {
+    color: #e5e7eb;
+    background: transparent !important;
+}
+
+body:not(.day-mode) .virtual-tryon-upload-section {
+    background: transparent !important;
+}
+
+body:not(.day-mode) .virtual-tryon-question-section {
+    background: transparent !important;
+}
+
+body:not(.day-mode) .virtual-tryon-upload-area {
+    background: #2c2c2c;
+    border-color: #475569;
+}
+
+body:not(.day-mode) .virtual-tryon-upload-area:hover {
+    border-color: #8b5cf6;
+    background: #353535;
+}
+
+body:not(.day-mode) .virtual-tryon-prompt-text {
+    color: #e5e7eb;
+}
+
+body:not(.day-mode) .virtual-tryon-prompt-hint {
+    color: #9ca3af;
+}
+
+body:not(.day-mode) .virtual-tryon-textarea {
+    background: #2c2c2c;
+    color: #ffffff;
+    border-color: #475569;
+}
+
+body:not(.day-mode) .virtual-tryon-textarea:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+body:not(.day-mode) .virtual-tryon-textarea::placeholder {
+    color: #9ca3af;
+}
+
+body:not(.day-mode) .virtual-tryon-cancel-btn {
+    background: #374151;
+    color: #e5e7eb;
+}
+
+body:not(.day-mode) .virtual-tryon-cancel-btn:hover {
+    background: #475569;
+}
+
+body:not(.day-mode) .virtual-tryon-submit-btn {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+
+body:not(.day-mode) .virtual-tryon-submit-btn:hover {
+    background: #7c3aed;
+}
+
+/* Virtual Try On modal - Day mode */
+body.day-mode #virtualTryOnModal .virtual-tryon-modal {
+    background: white;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+}
+
+body.day-mode .virtual-tryon-title {
+    background: linear-gradient(135deg, #1e293b 0%, #475569 25%, #64748b 50%, #94a3b8 75%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body.day-mode .virtual-tryon-description {
+    color: #475569;
+    background: transparent !important;
+}
+
+body.day-mode .virtual-tryon-upload-section {
+    background: transparent !important;
+}
+
+body.day-mode .virtual-tryon-question-section {
+    background: transparent !important;
+}
+
+body.day-mode #virtualTryOnModal .modal-body,
+body.day-mode #virtualTryOnModal .virtual-tryon-body {
+    background: transparent !important;
+}
+
+/* Only sections should be transparent, inputs keep their backgrounds */
+body.day-mode .virtual-tryon-upload-section,
+body.day-mode .virtual-tryon-question-section,
+body.day-mode .virtual-tryon-title,
+body.day-mode .virtual-tryon-description,
+body.day-mode .virtual-tryon-label {
+    background: transparent !important;
+}
+
 /* Style Quiz chat messages - match main chat styles */
 #styleQuizModal .user-message .message-content {
     background: transparent;

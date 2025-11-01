@@ -255,6 +255,260 @@ class StyleAI {
             await this.performAutoSearch(summary);
         }, 500);
     }
+
+    // ===== Virtual Try On =====
+    openVirtualTryOn() {
+        const modal = document.getElementById('virtualTryOnModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        // Reset form
+        this.removeImage();
+        const questionInput = document.getElementById('virtualTryOnQuestion');
+        if (questionInput) questionInput.value = '';
+    }
+
+    closeVirtualTryOn() {
+        const modal = document.getElementById('virtualTryOnModal');
+        if (!modal) return;
+        modal.style.display = 'none';
+        // Reset form
+        this.removeImage();
+        const questionInput = document.getElementById('virtualTryOnQuestion');
+        if (questionInput) questionInput.value = '';
+    }
+
+    handleImageUpload(file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            this.showToast('Please upload an image file');
+            return;
+        }
+        
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            this.showToast('Image size must be less than 10MB');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewImage = document.getElementById('previewImage');
+            const imagePreview = document.getElementById('imagePreview');
+            const uploadPrompt = document.getElementById('uploadPrompt');
+            const removeImageBtn = document.getElementById('removeImageBtn');
+            
+            if (previewImage) {
+                previewImage.src = e.target.result;
+                this._virtualTryOnImageData = e.target.result; // Store base64 data
+                this._virtualTryOnImageFile = file; // Store file reference
+            }
+            if (imagePreview) imagePreview.style.display = 'block';
+            if (uploadPrompt) uploadPrompt.style.display = 'none';
+            if (removeImageBtn) removeImageBtn.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeImage() {
+        const previewImage = document.getElementById('previewImage');
+        const imagePreview = document.getElementById('imagePreview');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        const imageFileInput = document.getElementById('imageFileInput');
+        
+        if (previewImage) previewImage.src = '';
+        if (imagePreview) imagePreview.style.display = 'none';
+        if (uploadPrompt) uploadPrompt.style.display = 'block';
+        if (removeImageBtn) removeImageBtn.style.display = 'none';
+        if (imageFileInput) imageFileInput.value = '';
+        
+        this._virtualTryOnImageData = null;
+        this._virtualTryOnImageFile = null;
+    }
+
+    async handleVirtualTryOnSubmit() {
+        const questionInput = document.getElementById('virtualTryOnQuestion');
+        const question = questionInput ? questionInput.value.trim() : '';
+        const imageData = this._virtualTryOnImageData;
+
+        // Validate
+        if (!imageData) {
+            this.showToast('Please upload an image');
+            return;
+        }
+
+        if (!question) {
+            this.showToast('Please enter a question');
+            return;
+        }
+
+        // Close modal
+        this.closeVirtualTryOn();
+
+        // Prepare message for main chat
+        // Set the message in the input field and trigger send
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+            // Format message with image reference
+            const messageText = `${question} [Image uploaded: Virtual Try On]`;
+            messageInput.value = messageText;
+            
+            // Store the image data for sending
+            this._pendingImageData = imageData;
+            this._pendingImageFile = this._virtualTryOnImageFile;
+            
+            // Trigger send message
+            await this.sendMessageWithImage(question, imageData);
+        }
+    }
+
+    async sendMessageWithImage(question, imageData) {
+        // Hide empty state and show chat messages
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('chatMessages').style.display = 'flex';
+        document.getElementById('chatMessages').style.flexDirection = 'column';
+
+        // Create session if needed
+        if (!this.currentSessionId) {
+            const newSession = {
+                id: Date.now().toString(),
+                title: question.length > 30 ? question.substring(0, 30) + '...' : question,
+                timestamp: Date.now(),
+                conversationHistory: [],
+                products: [],
+                searchContext: null
+            };
+            this.searchSessions.push(newSession);
+            this.currentSessionId = newSession.id;
+            this.updateSearchSessions();
+        }
+
+        const chatMessages = document.getElementById('chatMessages');
+
+        // Add user message with image preview
+        const userMessage = document.createElement('div');
+        userMessage.className = 'user-message';
+        userMessage.innerHTML = `
+            <div class="message-content">
+                ${question}
+                <div style="margin-top:8px;">
+                    <img src="${imageData}" alt="Uploaded image" style="max-width:200px; max-height:200px; border-radius:8px; object-fit:contain;" />
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(userMessage);
+        this.autoScroll();
+
+        // Add to conversation history
+        const messageForBackend = `${question} [Image uploaded - please analyze the image to find matching or similar products]`;
+        this.conversationHistory.push({
+            role: 'user',
+            content: messageForBackend
+        });
+
+        // Show loading
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'ai-message';
+        loadingMessage.innerHTML = `
+            <div class="message-content">
+                Analyzing your image and searching for matches<span class="blinking-circles">
+                    <span class="circle c1">●</span>
+                    <span class="circle c2">●</span>
+                    <span class="circle c3">●</span>
+                </span>
+            </div>
+        `;
+        chatMessages.appendChild(loadingMessage);
+        this.autoScroll();
+
+        try {
+            // Send message to backend with image data
+            // Note: In production, you'd want to send the image as a separate field or use FormData
+            // For now, we'll include it as base64 in the request
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    message: messageForBackend,
+                    conversationHistory: this.conversationHistory,
+                    imageData: imageData // Include image data
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+                throw new Error(errorData.error || `Server error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('Server response:', data);
+
+            // Remove loading message
+            loadingMessage.remove();
+
+            // Add AI response
+            const aiResponse = document.createElement('div');
+            aiResponse.className = 'ai-message';
+            const aiText = data.message || `I found results based on your image! Here are the top picks:`;
+
+            aiResponse.innerHTML = `
+                <div class="message-content"></div>
+            `;
+            chatMessages.appendChild(aiResponse);
+
+            // Type out the message
+            await this.typeMessage(aiResponse.querySelector('.message-content'), aiText);
+            this.autoScroll();
+
+            // Add AI response to conversation history
+            this.conversationHistory.push({
+                role: 'assistant',
+                content: data.message || aiText
+            });
+
+            // Limit conversation history
+            if (this.conversationHistory.length > 20) {
+                this.conversationHistory = this.conversationHistory.slice(-20);
+            }
+
+            // Store search context
+            this.currentSearchContext = {
+                userMessage: question,
+                filtersApplied: {}
+            };
+
+            // Extract price constraints if any
+            const priceMatch = question.match(/(?:under|below|less than|<)\s*\$?(\d+)/i);
+            if (priceMatch) {
+                this.currentSearchContext.filtersApplied.max_price = parseFloat(priceMatch[1]);
+            }
+
+            // Save session
+            this.saveCurrentSession();
+
+            // Display products if any
+            if (data.products && data.products.length > 0) {
+                this.displayProducts(data.products);
+            }
+
+            // Clear pending image data
+            this._pendingImageData = null;
+            this._pendingImageFile = null;
+
+        } catch (error) {
+            console.error('Error sending message with image:', error);
+            loadingMessage.remove();
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'ai-message';
+            errorMsg.innerHTML = `
+                <div class="message-content">Sorry, I encountered an error processing your image. Please try again.</div>
+            `;
+            chatMessages.appendChild(errorMsg);
+            this.autoScroll();
+        }
+    }
     
     async performAutoSearch(query) {
         console.log('performAutoSearch called with query:', query);
@@ -658,6 +912,50 @@ class StyleAI {
         const quizInput = document.getElementById('styleQuizInput');
         if (quizInput) quizInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.handleStyleQuizSend(); });
 
+        // Virtual Try On buttons
+        const openVirtualTryOnBtn = document.getElementById('openVirtualTryOnBtn');
+        if (openVirtualTryOnBtn) openVirtualTryOnBtn.addEventListener('click', () => this.openVirtualTryOn());
+        const virtualTryOnClose = document.getElementById('virtualTryOnClose');
+        if (virtualTryOnClose) virtualTryOnClose.addEventListener('click', () => this.closeVirtualTryOn());
+        const virtualTryOnCancel = document.getElementById('virtualTryOnCancel');
+        if (virtualTryOnCancel) virtualTryOnCancel.addEventListener('click', () => this.closeVirtualTryOn());
+        const virtualTryOnSubmit = document.getElementById('virtualTryOnSubmit');
+        if (virtualTryOnSubmit) virtualTryOnSubmit.addEventListener('click', () => this.handleVirtualTryOnSubmit());
+        
+        // Image upload handling
+        const imageUploadArea = document.getElementById('imageUploadArea');
+        const imageFileInput = document.getElementById('imageFileInput');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        if (imageUploadArea && imageFileInput) {
+            imageUploadArea.addEventListener('click', () => imageFileInput.click());
+            imageUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                imageUploadArea.style.borderColor = '#8b5cf6';
+                imageUploadArea.style.background = '#f3f4f6';
+            });
+            imageUploadArea.addEventListener('dragleave', () => {
+                imageUploadArea.style.borderColor = '#cbd5e1';
+                imageUploadArea.style.background = '#f8fafc';
+            });
+            imageUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageUploadArea.style.borderColor = '#cbd5e1';
+                imageUploadArea.style.background = '#f8fafc';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.handleImageUpload(files[0]);
+                }
+            });
+            imageFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    this.handleImageUpload(e.target.files[0]);
+                }
+            });
+        }
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', () => this.removeImage());
+        }
+
         // Search pills
         document.querySelectorAll('.search-pill').forEach(pill => {
             pill.addEventListener('click', (e) => {
@@ -704,6 +1002,16 @@ class StyleAI {
                 this.closeModal();
             }
         });
+
+        // Virtual Try On modal overlay click
+        const virtualTryOnModal = document.getElementById('virtualTryOnModal');
+        if (virtualTryOnModal) {
+            virtualTryOnModal.addEventListener('click', (e) => {
+                if (e.target === virtualTryOnModal) {
+                    this.closeVirtualTryOn();
+                }
+            });
+        }
 
         // Modal interactions
         this.setupModalInteractions();

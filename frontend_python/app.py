@@ -27,12 +27,13 @@ def chat():
         data = request.get_json()
         user_message = data.get('message', '')
         conversation_history = data.get('conversationHistory', [])
+        image_data = data.get('imageData', None)  # Optional image data from Virtual Try On
         
         if not user_message:
             return jsonify({'error': 'No message provided'}), 400
         
-        # Call LLM with tools (sync) and conversation history
-        response = asyncio.run(call_llm_with_tools(user_message, conversation_history))
+        # Call LLM with tools (sync) and conversation history, pass image if provided
+        response = asyncio.run(call_llm_with_tools(user_message, conversation_history, image_data))
         
         return jsonify({
             'message': response['message'],
@@ -252,8 +253,8 @@ def detect_and_correct_fashion_typos(text: str) -> str:
     
     return corrected_text, corrections_made
 
-async def call_llm_with_tools(user_message: str, conversation_history: list = None) -> Dict[str, Any]:
-    """Call Anthropic Claude with MCP tools"""
+async def call_llm_with_tools(user_message: str, conversation_history: list = None, image_data: str = None) -> Dict[str, Any]:
+    """Call Anthropic Claude with MCP tools, optionally with image support"""
     anthropic_client = get_anthropic_client()
     
     try:
@@ -274,6 +275,13 @@ async def call_llm_with_tools(user_message: str, conversation_history: list = No
 1. Provide personalized fashion advice and feedback to customers
 2. Filter and recommend products based on their specific needs
 3. Combine fashion expertise with practical product recommendations
+
+IMPORTANT - IMAGE ANALYSIS:
+- When a user uploads an image, you CAN and SHOULD see and analyze the image
+- Look at the image to identify: colors, style, type of clothing (shirt, hoodie, pants, etc.), patterns, gender (if apparent), and any distinctive features
+- Use what you see in the image to find matching or similar products using the filter_products tool
+- If asked to find a match, describe what you see in the image (colors, style, type) and then search for similar items
+- Do NOT say "I can't see the image" - you have vision capabilities and should use them
 
 CRITICAL TEXT FORMATTING RULES:
 - NEVER use markdown formatting like **bold**, *italic*, or __underline__
@@ -342,6 +350,7 @@ Here's how to handle different situations:
    - Use the filter_products tool to search for products based on their request
    - Be flexible with search terms to find products even with minor variations
    - Present results in a helpful, friendly way
+   - If an image is provided, analyze it first to identify colors, style, and clothing type, then use filter_products with those criteria
 
 5. **Follow-up Questions & Filtering:**
    - When user asks follow-up questions like "which one is better for dark skin", "show me cheaper options", "any red ones?"
@@ -406,10 +415,44 @@ Always be encouraging, helpful, and focus on helping the customer find exactly w
                     "content": msg.get("content", "")
                 })
         
-        # Add current message
+        # Add current message - with image if provided
+        if image_data:
+            # Parse the base64 data URL format (data:image/jpeg;base64,...)
+            import base64
+            import re
+            
+            # Extract media type and base64 data from data URL
+            match = re.match(r'data:image/(\w+);base64,(.+)', image_data)
+            if match:
+                media_type = match.group(1)  # jpeg, png, etc.
+                base64_data = match.group(2)
+                
+                # Build content with both text and image
+                message_content = [
+                    {
+                        "type": "text",
+                        "text": enhanced_message
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": f"image/{media_type}",
+                            "data": base64_data
+                        }
+                    }
+                ]
+                print(f"Sending message with image (type: {media_type}, data length: {len(base64_data)} chars)")
+            else:
+                # Fallback if format is unexpected
+                message_content = enhanced_message + "\n\n[Image was uploaded but could not be processed]"
+                print("Warning: Image data format not recognized, sending as text only")
+        else:
+            message_content = enhanced_message
+        
         messages.append({
             "role": "user",
-            "content": enhanced_message
+            "content": message_content
         })
         
         # Call Claude with tool calling
